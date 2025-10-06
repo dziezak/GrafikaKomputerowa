@@ -25,6 +25,22 @@ impl App for MyApp {
             }
 
             ui.label(format!("Kliknięcia: {}", self.counter));
+
+            ui.separator();
+
+            if (ui).button("Nie klikaj mnie").clicked() {
+                ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+            }
+        });
+        egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+            ui.separator();
+            ui.horizontal(|ui| {
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
+                    if ui.button("Zamknij aplikacje").clicked() {
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+                    }
+                })
+            });
         });
     }
 }
