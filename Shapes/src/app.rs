@@ -1,3 +1,4 @@
+use std::thread::sleep;
 use eframe::{egui, App};
 use crate::geometry::polygon::Polygon;
 use crate::geometry::point::Point;
@@ -6,6 +7,10 @@ use crate::editor::selection::Selection;
 pub struct PolygonApp {
     polygon: Polygon,
     selection: Selection,
+    show_context_menu: bool,
+    context_pos: egui::Pos2,
+    clicked_vertex: Option<usize>,
+    clicked_edge: Option<usize>,
 }
 
 impl Default for PolygonApp {
@@ -19,6 +24,10 @@ impl Default for PolygonApp {
         Self {
             polygon,
             selection: Selection::new(),
+            show_context_menu: false,
+            context_pos: egui::pos2(0.0, 0.0),
+            clicked_vertex: None,
+            clicked_edge: None,
         }
     }
 }
@@ -57,7 +66,7 @@ impl App for PolygonApp {
                     self.selection.selected_vertex = None;
                 }
 
-
+/*
                 if response.hovered() && response.clicked_by(egui::PointerButton::Secondary) {
                     if let Some(pos) = response.interact_pointer_pos() {
                         let mouse_point = Point { x: pos.x, y: pos.y };
@@ -74,6 +83,18 @@ impl App for PolygonApp {
                             let next_idx = (edge_idx + 1) % self.polygon.vertices.len();
                             self.polygon.add_vertex_mid_edge(edge_idx, next_idx);
                         }
+                    }
+                }
+*/
+
+                if response.clicked_by(egui::PointerButton::Secondary){
+                    if let Some(pos) = response.interact_pointer_pos() {
+                        let mouse_point = Point { x: pos.x, y: pos.y };
+
+                        self.clicked_vertex = self.selection.select_vertex(&self.polygon, mouse_point, 10.0);
+                        self.clicked_edge = self.selection.select_edge(&self.polygon, &mouse_point, 10.0);
+                        self.context_pos = pos;
+                        self.show_context_menu = true;
                     }
                 }
 
@@ -100,6 +121,52 @@ impl App for PolygonApp {
                 // rysowanie wierzchołków
                 for v in &self.polygon.vertices {
                     painter.circle_filled(egui::pos2(v.x, v.y), 5.0, egui::Color32::RED);
+                }
+
+                if self.show_context_menu {
+                    egui::Area::new(egui::Id::new("context_menu"))
+                        .fixed_pos(self.context_pos)
+                        .show(ctx, |ui| {
+                            egui::Frame::popup(&ctx.style()).show(ui, |ui| {
+                                ui.set_width(200.0);
+                                ui.vertical_centered(|ui| {
+                                    ui.heading("options");
+                                    ui.separator();
+
+                                    if let Some(v_idx) = self.clicked_vertex {
+                                        if ui.button("usun wierzcholek").clicked(){
+                                            self.polygon.remove_vertex(v_idx);
+                                            self.show_context_menu = false;
+                                        }
+                                        if ui.button("Ustaw caiglasc w wierzcholku").clicked(){
+                                            todo!();
+                                            self.show_context_menu = false;
+                                        }
+                                    }else if let Some(e_idx) = self.clicked_edge {
+                                        if ui.button("dodaj wierzcholek").clicked(){
+                                            self.polygon.add_vertex_mid_edge(e_idx, e_idx+1); //TODO tutaj jest problem bo nie da sie dodac wiierzcholka za ostatnia krawedzia
+                                            self.show_context_menu = false;
+                                        }
+                                        if ui.button("dodaj ograniczenie").clicked(){
+                                            todo!();
+                                            self.show_context_menu = false;
+                                        }
+                                        if ui.button("usun ograniczenie").clicked(){
+                                            todo!();
+                                            self.show_context_menu = false;
+                                        }
+                                        if ui.button("uzyj antyaliasingu").clicked(){
+                                            todo!();
+                                            self.show_context_menu = false;
+                                        }
+                                    }
+                                    if ui.button("Anuluj").clicked() {
+                                        self.show_context_menu = false;
+                                    }
+                                });
+                            });
+                        });
+
                 }
             }
         );
