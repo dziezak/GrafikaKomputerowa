@@ -116,6 +116,4 @@ impl App for PolygonApp {
             }
         });
     }
-
-
 }
