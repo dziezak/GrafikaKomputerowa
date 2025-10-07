@@ -109,6 +109,13 @@ impl Polygon {
         if let Some(constraint) = &self.constraints[moved_vertex_idx].clone() {
             self.enforce_constraint(moved_vertex_idx, next_idx, &constraint);
         }
+
+        //dodatkowa tablica do sledzenia
+        let mut applied = vec![false; self.vertices.len()];
+
+        self.apply_edge(prev_idx, false, &mut applied);
+        self.apply_edge(next_idx, true, &mut applied);
+
     }
 
 
@@ -151,6 +158,43 @@ impl Polygon {
                     self.vertices[start_idx].y = mid_y - dy * scale / 2.0;
                     self.vertices[end_idx].x = mid_x + dx * scale / 2.0;
                     self.vertices[end_idx].y = mid_y + dy * scale / 2.0;
+                }
+            }
+        }
+    }
+
+
+    pub fn apply_edge(&mut self, edge_idx: usize, move_next: bool, applied: &mut Vec<bool>) {
+        if applied[edge_idx] {
+            return;
+        }
+        applied[edge_idx] = true;
+
+        let n = self.vertices.len();
+        if n < 2 {
+            return;
+        }
+
+        let start_idx = edge_idx;
+        let end_idx = (edge_idx + 1) % n;
+
+        if let Some(constraint) = self.constraints[edge_idx].clone() {
+            match constraint {
+                ConstraintType::Horizontal | ConstraintType::Vertical | ConstraintType::Diagonal45 => {
+                    self.enforce_constraint(start_idx, end_idx, &constraint);
+
+                    // Rozszerzamy propagację do sąsiednich krawędzi
+                    if move_next {
+                        let next_edge = (edge_idx + 1) % n;
+                        self.apply_edge(next_edge, true, applied);
+                    } else if edge_idx > 0 {
+                        let prev_edge = if edge_idx == 0 { n - 1 } else { edge_idx - 1 };
+                        self.apply_edge(prev_edge, false, applied);
+                    }
+                }
+
+                ConstraintType::FixedLength(_) => {
+                    self.enforce_constraint(start_idx, end_idx, &constraint);
                 }
             }
         }
