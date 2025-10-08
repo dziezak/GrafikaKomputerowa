@@ -61,7 +61,7 @@ impl App for PolygonApp {
                             let dx = pos.x - self.polygon.vertices[idx].x;
                             let dy = pos.y - self.polygon.vertices[idx].y;
                             self.polygon.move_vertex(idx, dx, dy);
-                            self.polygon.apply_constraints(idx);
+                            self.polygon.apply_constraints();
                         }
                     }
                 } else {
@@ -138,18 +138,22 @@ impl App for PolygonApp {
                                     if ui.button("usun wierzcholek").clicked(){
                                         self.polygon.remove_vertex(v_idx);
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("Ustaw caiglasc w wierzcholku").clicked(){
                                         todo!();
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                 }else if let Some(e_idx) = self.clicked_edge {
                                     if ui.button("dodaj wierzcholek").clicked(){
                                         self.polygon.add_vertex_mid_edge(e_idx, e_idx+1); //TODO tutaj jest problem bo nie da sie dodac wiierzcholka za ostatnia krawedzia
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("dodaj ograniczenie").clicked(){
                                         self.show_constraint_submenu = !self.show_constraint_submenu;
+                                        self.polygon.apply_constraints();
                                         //self.show_context_menu = false;
                                     }
                                     if ui.button("usun ograniczenie").clicked(){
@@ -157,10 +161,12 @@ impl App for PolygonApp {
                                             self.polygon.constraints[e_idx] = None;
                                         }
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("uzyj antyaliasingu").clicked(){
                                         //todo!();
                                         eprintln!("egui robi to automatycznie!");
+                                        self.polygon.apply_constraints();
                                         self.show_context_menu = false;
                                     }
                                 }
@@ -176,10 +182,12 @@ impl App for PolygonApp {
                                     if ui.button("Pozioma (H)").clicked(){
                                         self.polygon.constraints[e_idx] = Some(ConstraintType::Horizontal);
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("Skosna (D)").clicked(){
-                                        self.polygon.constraints[e_idx] = Some(ConstraintType::Vertical);
+                                        self.polygon.constraints[e_idx] = Some(ConstraintType::Diagonal45);
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("Dlugosc stala").clicked(){
                                         let start = &self.polygon.vertices[e_idx];
@@ -189,6 +197,7 @@ impl App for PolygonApp {
                                         let length = (dx * dx + dy * dy).sqrt();
                                         self.polygon.constraints[e_idx] = Some(ConstraintType::FixedLength(length as f64)); // tutaj mega jest ten jezyk!
                                         self.show_context_menu = false;
+                                        self.polygon.apply_constraints();
                                     }
                                 }
                             }

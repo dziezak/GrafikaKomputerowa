@@ -91,34 +91,22 @@ impl Polygon {
         }
     }
 
-    pub fn apply_constraints(&mut self, moved_vertex_idx: usize) {
+    pub fn apply_constraints(&mut self) {
         let n = self.vertices.len();
         if n < 2 {
             return;
         }
 
-        let prev_idx = if moved_vertex_idx == 0 { n - 1 } else { moved_vertex_idx - 1 };
-        let next_idx = (moved_vertex_idx + 1) % n;
-
-        // Constraint na krawędzi poprzedniej (prev_idx -> moved_vertex_idx)
-        if let Some(constraint) = &self.constraints[prev_idx].clone() {
-            self.enforce_constraint(prev_idx, moved_vertex_idx, &constraint);
+        for i in 0..n {
+            if let Some(constraint) = self.get_constraint(i) {
+                let start_idx = i;
+                let end_idx = (i + 1) % n;
+                self.enforce_constraint(start_idx, end_idx, &constraint);
+            }
         }
-
-        // Constraint na krawędzi następnej (moved_vertex_idx -> next_idx)
-        if let Some(constraint) = &self.constraints[moved_vertex_idx].clone() {
-            self.enforce_constraint(moved_vertex_idx, next_idx, &constraint);
-        }
-
-        //dodatkowa tablica do sledzenia
-        let mut applied = vec![false; self.vertices.len()];
-
-        self.apply_edge(prev_idx, false, &mut applied);
-        self.apply_edge(next_idx, true, &mut applied);
-
     }
 
-
+    // matematyczna logika constrainow
     fn enforce_constraint(&mut self, start_idx: usize, end_idx: usize, constraint: &ConstraintType) {
         let start = &self.vertices[start_idx];
         let end = &self.vertices[end_idx];
@@ -137,17 +125,34 @@ impl Polygon {
                 self.vertices[start_idx].x = mid_x;
                 self.vertices[end_idx].x = mid_x;
             }
+
             ConstraintType::Diagonal45 => {
+                let dx = end.x - start.x;
+                let dy = end.y - start.y;
+                let len = (dx * dx + dy * dy).sqrt();
+
+                if len < std::f32::EPSILON {
+                    return;
+                }
+
                 let mid_x = (start.x + end.x) / 2.0;
                 let mid_y = (start.y + end.y) / 2.0;
-                let sign_dx = (end.x - start.x).signum();
-                let sign_dy = (end.y - start.y).signum();
-                let half_len = ((dx * dx + dy * dy).sqrt()) / 2.0;
-                self.vertices[start_idx].x = mid_x - half_len * sign_dx;
-                self.vertices[start_idx].y = mid_y - half_len * sign_dy;
-                self.vertices[end_idx].x = mid_x + half_len * sign_dx;
-                self.vertices[end_idx].y = mid_y + half_len * sign_dy;
+
+                // Kierunek 45° – zachowujemy orientację (czyli znak, w którą stronę ma się „pochylać”)
+                let sign_x = if dx >= 0.0 { 1.0 } else { -1.0 };
+                let sign_y = if dy >= 0.0 { 1.0 } else { -1.0 };
+
+                // odległość od środka do końca wzdłuż 45°
+                let offset = len / (2.0 * std::f32::consts::SQRT_2);
+
+                self.vertices[start_idx].x = mid_x - offset * sign_x;
+                self.vertices[start_idx].y = mid_y - offset * sign_y;
+                self.vertices[end_idx].x = mid_x + offset * sign_x;
+                self.vertices[end_idx].y = mid_y + offset * sign_y;
             }
+
+
+
             ConstraintType::FixedLength(len) => {
                 let current_len = (dx * dx + dy * dy).sqrt();
                 if current_len > 0.0 {
@@ -162,43 +167,5 @@ impl Polygon {
             }
         }
     }
-
-
-    pub fn apply_edge(&mut self, edge_idx: usize, move_next: bool, applied: &mut Vec<bool>) {
-        if applied[edge_idx] {
-            return;
-        }
-        applied[edge_idx] = true;
-
-        let n = self.vertices.len();
-        if n < 2 {
-            return;
-        }
-
-        let start_idx = edge_idx;
-        let end_idx = (edge_idx + 1) % n;
-
-        if let Some(constraint) = self.constraints[edge_idx].clone() {
-            match constraint {
-                ConstraintType::Horizontal | ConstraintType::Vertical | ConstraintType::Diagonal45 => {
-                    self.enforce_constraint(start_idx, end_idx, &constraint);
-
-                    // Rozszerzamy propagację do sąsiednich krawędzi
-                    if move_next {
-                        let next_edge = (edge_idx + 1) % n;
-                        self.apply_edge(next_edge, true, applied);
-                    } else if edge_idx > 0 {
-                        let prev_edge = if edge_idx == 0 { n - 1 } else { edge_idx - 1 };
-                        self.apply_edge(prev_edge, false, applied);
-                    }
-                }
-
-                ConstraintType::FixedLength(_) => {
-                    self.enforce_constraint(start_idx, end_idx, &constraint);
-                }
-            }
-        }
-    }
-
 
 }
