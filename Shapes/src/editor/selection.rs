@@ -10,11 +10,6 @@ impl Selection {
         Self{ selected_vertex: None}
     }
 
-    /*
-    pub fn select_vertex(&mut self, polygon: &Polygon, mouse_pos:Point, radius: f32) {
-        self.selected_vertex = polygon.vertices.iter().position(|v| v.distance(&mouse_pos) < radius);
-    }
-    */
     pub fn select_vertex(&mut self, polygon: &Polygon, mouse_pos:Point, radius: f32) -> Option<usize> {
         let result = polygon.vertices
             .iter()

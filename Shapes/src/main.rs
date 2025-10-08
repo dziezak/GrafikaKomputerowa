@@ -4,7 +4,7 @@ use crate::app::PolygonApp;
 mod app;
 mod geometry;
 mod editor;
-mod rendering;
+mod view;
 
 fn main()-> eframe::Result<()> {
     let options = NativeOptions::default();

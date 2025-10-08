@@ -1,12 +1,15 @@
+use crate::view::IPolygonDrawer::IPolygonDrawer;
 use std::thread::sleep;
 use eframe::{egui, App};
 use crate::geometry::polygon::{Polygon, ConstraintType};
 use crate::geometry::point::Point;
 use crate::editor::selection::Selection;
+use crate::view::{PolygonDrawer};
 
 pub struct PolygonApp {
     polygon: Polygon,
     selection: Selection,
+    drawer: Box<dyn IPolygonDrawer>,
     show_context_menu: bool,
     context_pos: egui::Pos2,
     clicked_vertex: Option<usize>,
@@ -26,6 +29,7 @@ impl Default for PolygonApp {
         Self {
             polygon,
             selection: Selection::new(),
+            drawer: Box::new(PolygonDrawer::new()),
             show_context_menu: false,
             context_pos: egui::pos2(0.0, 0.0),
             clicked_vertex: None,
@@ -80,49 +84,8 @@ impl App for PolygonApp {
                     }
                 }
 
-            // Rysujemy kweawdzie
-            self.polygon.ensure_constraints_len();
-            for (i, window) in self.polygon.vertices.windows(2).enumerate() {
-                painter.line_segment(
-                    [egui::pos2(window[0].x, window[0].y), egui::pos2(window[1].x, window[1].y)],
-                    egui::Stroke::new(2.0, egui::Color32::WHITE),
-                );
+            self.drawer.draw(&painter, &mut self.polygon);
 
-                let mid = egui::pos2(
-                    (window[0].x + window[1].x) / 2.0,
-                    (window[0].y + window[1].y) / 2.0,
-                );
-
-                if let Some(constraint) = &self.polygon.constraints[i] {
-                    let text = match constraint {
-                        ConstraintType::Horizontal => "H".to_string(),
-                        ConstraintType::Vertical => "V".to_string(),
-                        ConstraintType::Diagonal45 => "D".to_string(),
-                        ConstraintType::FixedLength(len) => format!("{:.1}", len),
-                    };
-                    painter.text(
-                        mid,
-                        egui::Align2::CENTER_CENTER,
-                        text,
-                        egui::FontId::monospace(14.0),
-                        egui::Color32::YELLOW,
-                    );
-                }
-            }
-
-            if self.polygon.vertices.len() > 2 {
-                let first = &self.polygon.vertices[0];
-                let last = self.polygon.vertices.last().unwrap();
-                painter.line_segment(
-                    [egui::pos2(first.x, first.y), egui::pos2(last.x, last.y)],
-                    egui::Stroke::new(2.0, egui::Color32::WHITE),
-                );
-            }
-
-            //rysowanie wierzchołków
-            for v in &self.polygon.vertices {
-                painter.circle_filled(egui::pos2(v.x, v.y), 5.0, egui::Color32::RED);
-            }
 
             if self.show_context_menu {
                 egui::Area::new(egui::Id::new("context_menu"))
