@@ -15,6 +15,8 @@ pub struct PolygonApp {
     clicked_vertex: Option<usize>,
     clicked_edge: Option<usize>,
     show_constraint_submenu: bool,
+    length_input: Option<f32>,
+    length_edge_idx: Option<usize>,
 }
 
 impl Default for PolygonApp {
@@ -35,6 +37,8 @@ impl Default for PolygonApp {
             clicked_vertex: None,
             clicked_edge: None,
             show_constraint_submenu: false,
+            length_input: None,
+            length_edge_idx: None,
         }
     }
 }
@@ -157,8 +161,12 @@ impl App for PolygonApp {
                                         let end = &self.polygon.vertices[e_idx+1 % self.polygon.vertices.len()];
                                         let dx = end.x - start.x;
                                         let dy = end.y - start.y;
-                                        let length = (dx * dx + dy * dy).sqrt();
+                                        let mut length = (dx * dx + dy * dy).sqrt();
                                         self.polygon.constraints[e_idx] = Some(ConstraintType::FixedLength(length as f64)); // tutaj mega jest ten jezyk!
+
+                                        self.length_input = Some(length);//okienko
+                                        self.length_edge_idx = Some(e_idx); //index do okienka
+
                                         self.show_context_menu = false;
                                         self.polygon.apply_constraints();
                                     }
@@ -167,6 +175,33 @@ impl App for PolygonApp {
                         });
                     });
 
+            }
+
+            if let Some(edge_idx) = self.length_edge_idx {
+                egui::Window::new("Ustaw dlugosc krawedzi")
+                    .collapsible(false)
+                    .resizable(false)
+                    .show(ctx, |ui| {
+                        ui.label(format!("Aktualna dlugosc: {:2}", self.length_input.unwrap_or(0.0)));
+
+                        let mut value = self.length_input.unwrap_or(0.0);
+                        if ui.add(egui::DragValue::new(&mut value).speed(1.0)).changed(){
+                            self.length_input = Some(value);
+                        }
+
+                        if ui.button("Zastosuj").clicked(){
+                            self.polygon.constraints[edge_idx] = Some(ConstraintType::FixedLength((self.length_input.unwrap()) as f64));
+                            self.length_input = None;
+                            self.length_edge_idx = None;
+
+                            self.polygon.apply_constraints();
+                        }
+
+                        if ui.button("Anuluj").clicked(){
+                            self.length_input = None;
+                            self.length_edge_idx = None;
+                        }
+                    });
             }
         }
     );
