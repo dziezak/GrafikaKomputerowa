@@ -106,7 +106,7 @@ impl Polygon {
         }
     }
 
-    // matematyczna logika constrainow
+    // matematyczna logika constrainow (najwazniejsza funkcja)
     fn enforce_constraint(&mut self, start_idx: usize, end_idx: usize, constraint: &ConstraintType) {
         let start = &self.vertices[start_idx];
         let end = &self.vertices[end_idx];
@@ -165,6 +165,35 @@ impl Polygon {
                     self.vertices[end_idx].y = mid_y + dy * scale / 2.0;
                 }
             }
+        }
+    }
+
+    // sprawdzanie czy obok edge nie ma juz takiego samego constraintu
+    pub fn is_constraint_legal(&self, edge_idx:usize, new_constraint: &ConstraintType) -> bool {
+        if !matches!(new_constraint, ConstraintType::Horizontal | ConstraintType::Vertical) {
+            return true;
+        }
+
+        let n= self.constraints.len();
+        if n == 0 {
+            return true;
+        }
+
+        let prev_idx = if edge_idx == 0 {n -1} else {edge_idx - 1};
+        let next_idx = (edge_idx + 1) % n;
+        let prev = &self.constraints[prev_idx];
+        let next = &self.constraints[next_idx];
+
+        match  new_constraint {
+            ConstraintType::Horizontal => {
+                !matches!(prev, Some(ConstraintType::Horizontal)) &&
+                !matches!(next, Some(ConstraintType::Horizontal))
+            }
+            ConstraintType::Vertical => {
+                matches!(prev, Some(ConstraintType::Vertical)) &&
+                matches!(next, Some(ConstraintType::Vertical))
+            }
+            _=> true,
         }
     }
 

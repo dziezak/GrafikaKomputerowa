@@ -19,6 +19,9 @@ pub struct PolygonApp {
     length_edge_idx: Option<usize>,
     is_dragging_polygon: bool,
     last_mouse_pos: Option<egui::Pos2>,
+
+    show_warning_popup: bool,
+    warning_text: String,
 }
 
 impl Default for PolygonApp {
@@ -43,6 +46,9 @@ impl Default for PolygonApp {
             length_edge_idx: None,
             is_dragging_polygon: false,
             last_mouse_pos: None,
+
+            show_warning_popup: false,
+            warning_text: String::new(),
         }
     }
 }
@@ -171,9 +177,15 @@ impl App for PolygonApp {
                                 ui.label("Dodaj ograniczenie:");
                                 if let Some(e_idx) = self.clicked_edge {
                                     if ui.button("Pozioma (H)").clicked(){
-                                        self.polygon.constraints[e_idx] = Some(ConstraintType::Horizontal);
+                                        let constraint = ConstraintType::Horizontal;
+                                        if self.polygon.is_constraint_legal(e_idx, &constraint) {
+                                            self.polygon.constraints[e_idx] = Some(ConstraintType::Horizontal);
+                                            self.polygon.apply_constraints();
+                                        }else{
+                                            self.warning_text = "Nie można ustawić: sasiednia krawedz jest juz pozioma".to_string();
+                                            self.show_warning_popup = true;
+                                        }
                                         self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("Skosna (D)").clicked(){
                                         self.polygon.constraints[e_idx] = Some(ConstraintType::Diagonal45);
@@ -224,6 +236,20 @@ impl App for PolygonApp {
                         if ui.button("Anuluj").clicked(){
                             self.length_input = None;
                             self.length_edge_idx = None;
+                        }
+                    });
+            }
+
+            if self.show_warning_popup {
+                egui::Window::new("Blad ograniczenia")
+                    .collapsible(false)
+                    .resizable(false)
+                    .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
+                    .show(ctx, |ui| {
+                        ui.label(&self.warning_text);
+                        ui.add_space(10.0);
+                        if ui.button("OK").clicked(){
+                            self.show_warning_popup = false;
                         }
                     });
             }
