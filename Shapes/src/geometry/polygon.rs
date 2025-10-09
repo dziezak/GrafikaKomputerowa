@@ -8,6 +8,15 @@ pub enum ConstraintType {
     FixedLength(f64),
 }
 
+#[derive(Clone, Copy)]
+pub enum EdgeType{
+    Line,
+    Bezier {
+        control1: Point,
+        control2:Point,
+    },
+}
+
 pub struct Polygon {
     pub vertices: Vec<Point>,
     pub constraints: Vec<Option<ConstraintType>>,
