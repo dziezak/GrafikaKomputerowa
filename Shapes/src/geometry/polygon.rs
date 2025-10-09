@@ -35,26 +35,50 @@ impl Polygon {
 
     //usun wierzcholek
     pub fn remove_vertex(&mut self, index: usize){
-        if index < self.vertices.len() {
-            self.vertices.remove(index);
-            self.sync_constraints();
+        if self.vertices.len() <= 3 {
+            return;
         }
+        self.vertices.remove(index);
+        if index > 0 {
+            self.constraints[index - 1] = None;
+        }
+
+        if index < self.constraints.len() {
+            self.constraints[index] = None;
+        }
+        self.ensure_constraints_len();
+        self.apply_constraints();
     }
 
     //dodaj wierzcholek ez
-    pub fn add_vertex_mid_edge(&mut self, start_idx:usize, end_idx:usize){
-        if start_idx < self.vertices.len() && end_idx < self.vertices.len(){
-            let start = &self.vertices[start_idx];
-            let end = &self.vertices[end_idx];
-            let mid = Point {
-                x: (start.x + end.x) / 2.0,
-                y: (start.y + end.y) / 2.0,
-            };
-            self.vertices.insert(end_idx, mid);
-            self.sync_constraints();
-            self.ensure_constraints_len();
+    pub fn add_vertex_mid_edge(&mut self, start_idx: usize, end_idx: usize) {
+        let n = self.vertices.len();
+        if n < 2 {
+            return
         }
+
+        let start = self.vertices[start_idx];
+        let end = self.vertices[(end_idx)%n];
+        let mid = Point {
+            x: (start.x + end.x) / 2.0,
+            y: (start.y + end.y) / 2.0,
+        };
+
+        if end_idx == 0 {
+            self.vertices.push(mid);
+        } else {
+            self.vertices.insert(end_idx, mid);
+        }
+
+        // usuń constraint na starej krawędzi
+        if start_idx < self.constraints.len() {
+            self.constraints[start_idx] = None;
+        }
+
+        self.ensure_constraints_len();
+        self.apply_constraints();
     }
+
 
     // ustawiamy ograniczenia na wybrana krawedz
     pub fn set_constaint(&mut self, edge_idx: usize, constaint: ConstraintType){

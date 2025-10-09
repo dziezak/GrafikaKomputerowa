@@ -22,11 +22,14 @@ impl Selection {
         let mut closest = None;
         let mut min_dist = radius;
 
-        for (i, window) in polygon.vertices.windows(2).enumerate() {
-            let start = &window[0];
-            let end = &window[1];
+        let n = polygon.vertices.len();
+        if n < 2 {
+            return None;
+        }
 
-            // Odległość punktu od odcinka
+        for i in 0..n {
+            let start = &polygon.vertices[i];
+            let end = &polygon.vertices[(i + 1) % n]; // <--- UWAGA TU: % n robi wrap-around
             let dist = distance_point_to_segment(mouse, start, end);
             if dist < min_dist {
                 min_dist = dist;

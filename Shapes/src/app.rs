@@ -135,7 +135,6 @@ impl App for PolygonApp {
                                     if ui.button("usun wierzcholek").clicked(){
                                         self.polygon.remove_vertex(v_idx);
                                         self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("Ustaw caiglasc w wierzcholku").clicked(){
                                         todo!();
