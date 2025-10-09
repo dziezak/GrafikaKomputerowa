@@ -22,6 +22,7 @@ pub struct PolygonApp {
 
     show_warning_popup: bool,
     warning_text: String,
+    show_help_window: bool,
 }
 
 impl Default for PolygonApp {
@@ -49,12 +50,22 @@ impl Default for PolygonApp {
 
             show_warning_popup: false,
             warning_text: String::new(),
+
+            show_help_window: false,
         }
     }
 }
 
 impl App for PolygonApp {
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        egui::TopBottomPanel::top("topbar").show(ctx, |ui| {
+            if ui.button("Pomoc").clicked(){
+                self.show_help_window = true;
+            }
+        });
+
         egui::CentralPanel::default().show(ctx,|ui| {
                 let canvas_size = egui::Vec2::new(600.0, 400.0);
                 let (rect, response) = ui.allocate_exact_size(canvas_size, egui::Sense::click_and_drag());
@@ -250,6 +261,29 @@ impl App for PolygonApp {
                         if ui.button("OK").clicked(){
                             self.show_warning_popup = false;
                         }
+                    });
+            }
+
+            if self.show_help_window {
+                egui::Window::new("Pomoc")
+                    .collapsible(false)
+                    .resizable(false)
+                    .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
+                    .show(ctx, |ui| {
+                        ui.label("Pomoc");
+                        ui.hyperlink_to("Kliknij po więcej pomocy",
+                                        "https://www.youtube.com/watch?v=xvFZjo5PgG0");
+
+                        ui.add_space(10.0);
+                        ui.separator();
+                        ui.add_space(5.0);
+
+                        // przycisk po prawej
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                            if ui.button("OK").clicked() {
+                                self.show_help_window = false;
+                            }
+                        });
                     });
             }
         }
