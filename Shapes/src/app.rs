@@ -17,6 +17,8 @@ pub struct PolygonApp {
     show_constraint_submenu: bool,
     length_input: Option<f32>,
     length_edge_idx: Option<usize>,
+    is_dragging_polygon: bool,
+    last_mouse_pos: Option<egui::Pos2>,
 }
 
 impl Default for PolygonApp {
@@ -39,6 +41,8 @@ impl Default for PolygonApp {
             show_constraint_submenu: false,
             length_input: None,
             length_edge_idx: None,
+            is_dragging_polygon: false,
+            last_mouse_pos: None,
         }
     }
 }
@@ -58,25 +62,45 @@ impl App for PolygonApp {
                     egui::StrokeKind::Inside,
                 );
 
-                // Obsługa kliknięcia/podciągnięcia wierzchołka
-                if response.dragged_by(egui::PointerButton::Primary) {
-                    if let Some(pos) = response.interact_pointer_pos() {
-                        let mouse_point = Point { x: pos.x, y: pos.y };
-                        if self.selection.selected_vertex.is_none() {
-                            self.selection.select_vertex(&self.polygon, mouse_point, 10.0);
-                        }
-                        if let Some(idx) = self.selection.selected_vertex {
-                            let dx = pos.x - self.polygon.vertices[idx].x;
-                            let dy = pos.y - self.polygon.vertices[idx].y;
-                            self.polygon.move_vertex(idx, dx, dy);
-                            self.polygon.apply_constraints();
+            // Obsługa kliknięcia/podciągnięcia wierzchołka
+            if response.dragged_by(egui::PointerButton::Primary) {
+                if let Some(pos) = response.interact_pointer_pos() {
+                    let mouse_point = Point { x: pos.x, y: pos.y };
+
+                    if self.selection.selected_vertex.is_none() && !self.is_dragging_polygon {
+                        if self.selection.select_vertex(&self.polygon, mouse_point, 10.0).is_none() {
+                            self.is_dragging_polygon = true;
+                            self.last_mouse_pos = Some(pos);
                         }
                     }
-                } else {
-                    self.selection.selected_vertex = None;
-                }
 
-                if response.clicked_by(egui::PointerButton::Secondary){
+                    if let Some(idx) = self.selection.selected_vertex {
+                        let dx = pos.x - self.polygon.vertices[idx].x;
+                        let dy = pos.y - self.polygon.vertices[idx].y;
+                        self.polygon.move_vertex(idx, dx, dy);
+                        self.polygon.apply_constraints();
+                    }
+                    else if self.is_dragging_polygon {
+                        if let Some(last_pos) = self.last_mouse_pos {
+                            let dx = pos.x - last_pos.x;
+                            let dy = pos.y - last_pos.y;
+                            for v in &mut self.polygon.vertices {
+                                v.x += dx;
+                                v.y += dy;
+                            }
+                            self.last_mouse_pos = Some(pos);
+                        }
+                    }
+                }
+            } else {
+                self.selection.selected_vertex = None;
+                self.is_dragging_polygon = false;
+                self.last_mouse_pos = None;
+            }
+
+
+
+            if response.clicked_by(egui::PointerButton::Secondary){
                     if let Some(pos) = response.interact_pointer_pos() {
                         let mouse_point = Point { x: pos.x, y: pos.y };
 
