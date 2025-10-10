@@ -184,8 +184,6 @@ impl Polygon {
                 self.vertices[end_idx].y = mid_y + offset * sign_y;
             }
 
-
-
             ConstraintType::FixedLength(len) => {
                 let current_len = (dx * dx + dy * dy).sqrt();
                 if current_len > 0.0 {

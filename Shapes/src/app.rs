@@ -4,7 +4,7 @@ use eframe::{egui, App};
 use crate::geometry::polygon::{Polygon, ConstraintType};
 use crate::geometry::point::Point;
 use crate::editor::selection::Selection;
-use crate::view::{PolygonDrawer};
+use crate::view::{libPolygonDrawer, PolygonDrawer};
 
 pub struct PolygonApp {
     polygon: Polygon,
@@ -275,10 +275,11 @@ impl App for PolygonApp {
                                         "https://www.youtube.com/watch?v=xvFZjo5PgG0");
 
                         ui.add_space(10.0);
+                        ui.label("Program umożliwia tworzenie i edycję wielokątów z ograniczeniami geometrycznymi (H, V, 45°, długość). Kliknij wierzchołek, aby go przesunąć, lub w krawędź, aby dodać nowy punkt. Kliknięcie prawym przyciskiem myszy otwiera menu z opcjami (dodaj, usuń, nadaj ograniczenie itp.). Dwie sąsiednie krawędzie nie mogą być jednocześnie poziome lub pionowe. Krawędzie mogą być także krzywymi Beziera trzeciego stopnia z punktami kontrolnymi. W wierzchołkach można ustawiać klasę ciągłości (G0, G1, C1) między segmentami. Cały wielokąt można przesuwać przeciągając tło. Po każdej zmianie program automatycznie wymusza zgodność z ograniczeniami.");
+                        ui.add_space(10.0);
                         ui.separator();
                         ui.add_space(5.0);
 
-                        // przycisk po prawej
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                             if ui.button("OK").clicked() {
                                 self.show_help_window = false;
