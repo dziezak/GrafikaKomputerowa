@@ -75,8 +75,10 @@ impl Polygon {
 
         if end_idx == 0 {
             self.vertices.push(mid);
+            self.constraints.push(None);
         } else {
             self.vertices.insert(end_idx, mid);
+            self.constraints.insert(start_idx + 1, None);
         }
 
         // usuń constraint na starej krawędzi

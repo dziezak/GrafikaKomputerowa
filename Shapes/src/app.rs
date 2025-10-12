@@ -1,3 +1,4 @@
+use std::cmp::PartialEq;
 use crate::view::IPolygonDrawer::IPolygonDrawer;
 use std::thread::sleep;
 use eframe::{egui, App};
@@ -6,10 +7,18 @@ use crate::geometry::point::Point;
 use crate::editor::selection::Selection;
 use crate::view::{libPolygonDrawer, PolygonDrawer};
 
+#[derive(PartialEq, Eq)]
+pub enum DrawMode {
+    Library,
+    Bresenham,
+}
+
+
 pub struct PolygonApp {
     polygon: Polygon,
     selection: Selection,
     drawer: Box<dyn IPolygonDrawer>,
+    draw_mode: DrawMode,
     show_context_menu: bool,
     context_pos: egui::Pos2,
     clicked_vertex: Option<usize>,
@@ -38,6 +47,7 @@ impl Default for PolygonApp {
             polygon,
             selection: Selection::new(),
             drawer: Box::new(PolygonDrawer::new()),
+            draw_mode: DrawMode::Library,
             show_context_menu: false,
             context_pos: egui::pos2(0.0, 0.0),
             clicked_vertex: None,
@@ -61,9 +71,21 @@ impl App for PolygonApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
         egui::TopBottomPanel::top("topbar").show(ctx, |ui| {
-            if ui.button("Pomoc").clicked(){
-                self.show_help_window = true;
-            }
+            ui.horizontal(|ui| {
+                ui.heading("Tryb rysowania");
+                if ui.radio(self.draw_mode == DrawMode::Library, "Bibliotekowa implementacja").clicked() {
+                    self.draw_mode = DrawMode::Library;
+                    self.drawer = Box::new(PolygonDrawer::new());
+                }
+                if ui.radio(self.draw_mode == DrawMode::Bresenham, "Bibliotekowa implementacja").clicked() {
+                    self.draw_mode = DrawMode::Bresenham;
+                    self.drawer = Box::new(crate::view::myPolygonDrawer::myPolygonDrawer::new());
+                }
+                ui.separator();
+                if ui.button("Pomoc").clicked(){
+                    self.show_help_window = true;
+                }
+            });
         });
 
         egui::CentralPanel::default().show(ctx,|ui| {

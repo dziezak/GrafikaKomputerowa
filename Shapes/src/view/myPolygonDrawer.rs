@@ -1,16 +1,60 @@
 use crate::view::IPolygonDrawer::IPolygonDrawer;
-use egui::{Painter, Pos2, Stroke, Align2};
+use egui::{Painter, Pos2};
 use crate::geometry::polygon::{Polygon, ConstraintType};
 use eframe::egui;
 
 pub struct myPolygonDrawer;
 
 impl myPolygonDrawer {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Self
     }
 
+    fn draw_pixel(painter: &egui::Painter, x: i32, y: i32, color: egui::Color32) {
+        let size = 2.0;
+        painter.rect_filled(
+            egui::Rect::from_min_size(egui::pos2(x as f32, y as f32), egui::vec2(size, size)),
+            0.0,
+            color,
+        );
+    }
+
+    /// Implementacja algorytmu Bresenhama
+    fn bresenham_line(
+        painter: &egui::Painter,
+        start: (i32, i32),
+        end: (i32, i32),
+        color: egui::Color32,
+    ) {
+        let (mut x0, mut y0) = start;
+        let (x1, y1) = end;
+
+        let dx = (x1 - x0).abs();
+        let dy = (y1 - y0).abs();
+        let sx = if x0 < x1 { 1 } else { -1 };
+        let sy = if y0 < y1 { 1 } else { -1 };
+        let mut err = dx - dy;
+
+        loop {
+            Self::draw_pixel(painter, x0, y0, color);
+
+            if x0 == x1 && y0 == y1 {
+                break;
+            }
+
+            let e2 = 2 * err;
+            if e2 > -dy {
+                err -= dy;
+                x0 += sx;
+            }
+            if e2 < dx {
+                err += dx;
+                y0 += sy;
+            }
+        }
+    }
 }
+
 impl IPolygonDrawer for myPolygonDrawer {
     fn draw(&self, painter: &egui::Painter, polygon: &mut Polygon) {
         polygon.ensure_constraints_len();
@@ -23,10 +67,11 @@ impl IPolygonDrawer for myPolygonDrawer {
             let start = &polygon.vertices[i];
             let end = &polygon.vertices[(i + 1) % n]; // wrap-around
 
-            ///TUTAJ Trzeba napisać swoje rysowanie linii algotyrmem Bresenhama
-            painter.line_segment(
-                [egui::pos2(start.x, start.y), egui::pos2(end.x, end.y)],
-                egui::Stroke::new(2.0, egui::Color32::WHITE),
+            Self::bresenham_line(
+                painter,
+                (start.x as i32, start.y as i32),
+                (end.x as i32, end.y as i32),
+                egui::Color32::WHITE,
             );
 
             let mid = egui::pos2((start.x + end.x) / 2.0, (start.y + end.y) / 2.0);
@@ -53,3 +98,4 @@ impl IPolygonDrawer for myPolygonDrawer {
         }
     }
 }
+
