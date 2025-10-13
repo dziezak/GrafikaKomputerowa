@@ -271,4 +271,41 @@ impl Polygon {
         (center, radius)
     }
 
+    pub fn compute_arc_from_chord(start: Point, end: Point, radius_opt: Option<f32>, clockwise: bool) -> Option<(Point, f32)> {
+        let dx = end.x - start.x;
+        let dy = end.y - start.y;
+        let chord_len = (dx * dx + dy * dy).sqrt();
+
+        if chord_len == 0.0 {
+            return None;
+        }
+
+        // domyślny promień: połowa długości cięciwy (-> łuk półokręgu z centrum w midpoint)
+        let r = radius_opt.unwrap_or(chord_len / 2.0);
+
+        // promień musi spełniać r >= L/2
+        if r < chord_len / 2.0 {
+            return None;
+        }
+
+        let mid = Point { x: (start.x + end.x) / 2.0, y: (start.y + end.y) / 2.0 };
+
+        // wysokość od środka cięciwy do środka okręgu
+        let half = chord_len / 2.0;
+        let h = (r * r - half * half).max(0.0).sqrt(); // .max(0.0) zabezpiecza przed ujemnym zbog floatów
+
+        // unit normal (prostopadły do wektora cięciwy)
+        let ux = -dy / chord_len;
+        let uy = dx / chord_len;
+
+        // wybierz stronę normalnej w zależności od kierunku (clockwise)
+        // (możesz też pozwolić użytkownikowi wybrać, ale tu prosty warunek)
+        let sign = if clockwise { 1.0 } else { -1.0 };
+
+        let cx = mid.x + sign * ux * h;
+        let cy = mid.y + sign * uy * h;
+
+        Some((Point { x: cx, y: cy }, r))
+    }
+
 }

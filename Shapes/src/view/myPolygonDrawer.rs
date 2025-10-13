@@ -2,7 +2,7 @@ use crate::view::IPolygonDrawer::IPolygonDrawer;
 use egui::{Painter, Pos2};
 use crate::geometry::polygon::{Polygon, ConstraintType};
 use eframe::egui;
-use eframe::epaint::Color32;
+use eframe::epaint::{Color32, Stroke};
 use crate::geometry::point;
 use crate::geometry::point::Point;
 
@@ -104,7 +104,19 @@ impl IPolygonDrawer for MyPolygonDrawer {
         }
     }
 
-    fn draw_arc(painter: &Painter, center: Point, radius: point::Point, start: Point, end: f32, clockwise: Color32) {
+
+
+    fn draw_arc_between_points(
+        &self,
+        painter: &Painter,
+        p1: Pos2,
+        p2: Pos2,
+        arc_angle: f32, // np. std::f32::consts::PI dla półokręgu
+        color: Color32,
+        thickness: f32,
+    ) {todo!();}
+
+    fn draw_arc(&self, painter: &Painter, start: Point, end: Point, center: Point, radius: f32, stroke: Stroke, clockwise: bool) {
         todo!()
     }
 }

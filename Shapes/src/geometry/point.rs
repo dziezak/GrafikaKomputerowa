@@ -13,4 +13,13 @@ impl Point {
         self.x += dx;
         self.y += dy;
     }
+
+
+}
+
+impl std::ops::Sub for Point {
+    type Output = Point;
+    fn sub(self, other: Point) -> Point {
+        Point { x: self.x - other.x, y: self.y - other.y }
+    }
 }
