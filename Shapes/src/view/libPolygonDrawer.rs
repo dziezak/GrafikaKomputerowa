@@ -17,50 +17,27 @@ impl PolygonDrawer {
 }
 impl IPolygonDrawer for PolygonDrawer {
 
-    fn draw_arc(
-        painter: &egui::Painter,
-        center: Point,
-        radius: f32,
-        start: Point,
-        end: Point,
-        clockwise: bool,
-    ) {
-        let start_angle = (start.y - center.y).atan2(start.x - center.x);
-        let end_angle = (end.y - center.y).atan2(end.x - center.x);
+    fn draw_arc(painter: &egui::Painter, start: Point, end: Point, center: Point, radius: f32, color: egui::Color32) {
+        let steps = 64; // im więcej, tym gładszy łuk
+        let angle_start = (start.y - center.y).atan2(start.x - center.x);
+        let angle_end = (end.y - center.y).atan2(end.x - center.x);
 
-        let mut angle_diff = if clockwise {
-            start_angle - end_angle
-        } else {
-            end_angle - start_angle
-        };
-
-        if angle_diff < 0.0 {
-            angle_diff += TAU;
+        // Zakładamy łuk mniejszy niż pół okręgu
+        let mut points = Vec::new();
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
+            let angle = angle_start + t * (angle_end - angle_start);
+            points.push(egui::pos2(
+                center.x + radius * angle.cos(),
+                center.y + radius * angle.sin(),
+            ));
         }
 
-        let steps = 40;
-        let mut last = start;
-        for i in 1..=steps {
-            let t = i / steps;
-            let angle = if clockwise {
-                start_angle - t as f32 * angle_diff
-            } else {
-                start_angle + t as f32 * angle_diff
-            };
-
-            let p = Point {
-                x: center.x + radius * angle.cos(),
-                y: center.y + radius * angle.sin(),
-            };
-
-            painter.line_segment(
-                [egui::pos2(last.x as f32, last.y as f32), egui::pos2(p.x as f32, p.y as f32)],
-                egui::Stroke::new(2.0, egui::Color32::LIGHT_BLUE),
-            );
-
-            last = p;
+        for w in points.windows(2) {
+            painter.line_segment([w[0], w[1]], egui::Stroke::new(2.0, color));
         }
     }
+
 
     fn draw(&self, painter: &egui::Painter, polygon: &mut Polygon) {
         polygon.ensure_constraints_len();
@@ -73,19 +50,17 @@ impl IPolygonDrawer for PolygonDrawer {
             let start = &polygon.vertices[i];
             let end = &polygon.vertices[(i + 1) % n]; // wrap-around
 
-            match polygon.edge_types[i] {
-                EdgeType::Line => {
+            match polygon.constraints[i] {
+
+                Some(ConstraintType::Arc {..}) => {
+                    let (center, radius) = polygon.compute_default_arc(*start, *end);
+                    PolygonDrawer::draw_arc(painter, *start, *end, center, radius, Color32::LIGHT_GRAY);
+                }
+                _ => {
                     painter.line_segment(
                         [egui::pos2(start.x, start.y), egui::pos2(end.x, end.y)],
                         egui::Stroke::new(2.0, egui::Color32::WHITE),
                     );
-                }
-                EdgeType::Arc { center, radius, clockwise, .. } => {
-                    Self::draw_arc(painter, center, radius, *start, *end, clockwise);
-                }
-                _ => {
-                    // Bezier na razie pomijamy
-                    todo!();
                 }
             }
 
@@ -98,7 +73,9 @@ impl IPolygonDrawer for PolygonDrawer {
                     ConstraintType::Horizontal => "H".to_string(),
                     ConstraintType::Vertical => "V".to_string(),
                     ConstraintType::Diagonal45 => "D".to_string(),
+                    ConstraintType::Arc { g1_start: _, g1_end: _ } => "A".to_string(),
                     ConstraintType::FixedLength(len) => format!("{:.1}", len),
+                    _=> "".to_string(),
                 };
                 painter.text(
                     mid,

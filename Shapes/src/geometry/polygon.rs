@@ -6,6 +6,10 @@ pub enum ConstraintType {
     Vertical,
     Diagonal45,
     FixedLength(f64),
+    Arc {
+        g1_start: bool,
+        g1_end: bool,
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -208,6 +212,7 @@ impl Polygon {
                     self.vertices[end_idx].y = mid_y + dy * scale / 2.0;
                 }
             }
+            _=> {}
         }
     }
 
@@ -240,33 +245,30 @@ impl Polygon {
         }
     }
 
-    //TODO: funkcja pomocnicza do okręgu
-    pub fn default_arc_between(&self, p1: Point, p2: Point, clockwise: bool) -> EdgeType {
-        let mid = Point {
-            x: (p1.x + p2.x) / 2.0,
-            y: (p1.y + p2.y) / 2.0,
-        };
-        let dx = p2.x - p1.x;
-        let dy = p2.y - p1.y;
+
+    ///ARCS:
+    pub fn compute_default_arc(&self, start: Point, end: Point) -> (Point, f32) {
+        let dx = end.x - start.x;
+        let dy = end.y - start.y;
         let length = (dx * dx + dy * dy).sqrt();
         let radius = length / 2.0;
 
-        let nx = if clockwise { dy } else { -dy };
-        let ny = if clockwise { -dx } else { dx };
-        let norm = (nx * nx + ny * ny).sqrt();
-        let offset = radius / norm;
-        let center = Point {
-            x: mid.x + nx * offset,
-            y: mid.y + ny * offset,
+        let mid = Point {
+            x: (start.x + end.x) / 2.0,
+            y: (start.y + end.y) / 2.0,
         };
 
-        EdgeType::Arc {
-            center,
-            radius,
-            clockwise,
-            g1_start: false,
-            g1_end: false,
-        }
+        // Normalny wektor (prostopadły)
+        let nx = -dy / length;
+        let ny = dx / length;
+
+        // Przesuwamy środek o promień po normalnej
+        let center = Point {
+            x: mid.x + nx * radius,
+            y: mid.y + ny * radius,
+        };
+
+        (center, radius)
     }
 
 }

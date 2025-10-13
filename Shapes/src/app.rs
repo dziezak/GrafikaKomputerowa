@@ -78,7 +78,7 @@ impl App for PolygonApp {
                     self.draw_mode = DrawMode::Library;
                     self.drawer = Box::new(PolygonDrawer::new());
                 }
-                if ui.radio(self.draw_mode == DrawMode::Bresenham, "Bibliotekowa implementacja").clicked() {
+                if ui.radio(self.draw_mode == DrawMode::Bresenham, "Moja implementacja").clicked() {
                     self.draw_mode = DrawMode::Bresenham;
                     self.drawer = Box::new(crate::view::myPolygonDrawer::MyPolygonDrawer::new());
                 }
@@ -240,11 +240,25 @@ impl App for PolygonApp {
                                         self.polygon.apply_constraints();
                                     }
                                     if ui.button("Łuk").clicked(){
-                                        let start = &self.polygon.vertices[e_idx];
-                                        let end = &self.polygon.vertices[e_idx+1 % self.polygon.vertices.len()];
-                                        let mut todoBool = false;
-                                        self.polygon.default_arc_between(*start, *end, todoBool);
-
+                                        let constraint = ConstraintType::Arc{
+                                            g1_start: false,
+                                            g1_end: false,
+                                        };
+                                        self.polygon.constraints[e_idx] = Some(constraint);
+                                        self.polygon.apply_constraints();
+                                        eprint!("context menu zareagowalo");
+                                    }
+                                    if let Some(ConstraintType::Arc { ref mut g1_start, ref mut g1_end})=
+                                        self.polygon.constraints[e_idx]
+                                    {
+                                        ui.separator();
+                                        ui.label("Ustaw ciaglosc luku:");
+                                        if ui.button("Przelacz G1 start").clicked(){
+                                            *g1_start = !*g1_start;
+                                        }
+                                        if ui.button("Przelacz G1 end").clicked() {
+                                            *g1_end = !*g1_end;
+                                        }
                                     }
                                 }
                             }

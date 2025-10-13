@@ -2,6 +2,8 @@ use crate::view::IPolygonDrawer::IPolygonDrawer;
 use egui::{Painter, Pos2};
 use crate::geometry::polygon::{Polygon, ConstraintType};
 use eframe::egui;
+use eframe::epaint::Color32;
+use crate::geometry::point;
 use crate::geometry::point::Point;
 
 pub struct MyPolygonDrawer;
@@ -83,7 +85,9 @@ impl IPolygonDrawer for MyPolygonDrawer {
                     ConstraintType::Horizontal => "H".to_string(),
                     ConstraintType::Vertical => "V".to_string(),
                     ConstraintType::Diagonal45 => "D".to_string(),
+                    ConstraintType::Arc { g1_start: _, g1_end: _ } => "A".to_string(),
                     ConstraintType::FixedLength(len) => format!("{:.1}", len),
+                    _ => "".to_string(),
                 };
                 painter.text(
                     mid,
@@ -100,7 +104,7 @@ impl IPolygonDrawer for MyPolygonDrawer {
         }
     }
 
-    fn draw_arc(painter: &Painter, center: Point, radius: f32, start: Point, end: Point, clockwise: bool) {
+    fn draw_arc(painter: &Painter, center: Point, radius: point::Point, start: Point, end: f32, clockwise: Color32) {
         todo!()
     }
 }
