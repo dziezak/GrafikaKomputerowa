@@ -14,6 +14,7 @@ pub enum DrawMode {
 }
 
 
+#[derive()]
 pub struct PolygonApp {
     polygon: Polygon,
     selection: Selection,
@@ -79,7 +80,7 @@ impl App for PolygonApp {
                 }
                 if ui.radio(self.draw_mode == DrawMode::Bresenham, "Bibliotekowa implementacja").clicked() {
                     self.draw_mode = DrawMode::Bresenham;
-                    self.drawer = Box::new(crate::view::myPolygonDrawer::myPolygonDrawer::new());
+                    self.drawer = Box::new(crate::view::myPolygonDrawer::MyPolygonDrawer::new());
                 }
                 ui.separator();
                 if ui.button("Pomoc").clicked(){
@@ -229,7 +230,7 @@ impl App for PolygonApp {
                                         let end = &self.polygon.vertices[e_idx+1 % self.polygon.vertices.len()];
                                         let dx = end.x - start.x;
                                         let dy = end.y - start.y;
-                                        let mut length = (dx * dx + dy * dy).sqrt();
+                                        let length = (dx * dx + dy * dy).sqrt();
                                         self.polygon.constraints[e_idx] = Some(ConstraintType::FixedLength(length as f64)); // tutaj mega jest ten jezyk!
 
                                         self.length_input = Some(length);//okienko
@@ -237,6 +238,13 @@ impl App for PolygonApp {
 
                                         self.show_context_menu = false;
                                         self.polygon.apply_constraints();
+                                    }
+                                    if ui.button("Łuk").clicked(){
+                                        let start = &self.polygon.vertices[e_idx];
+                                        let end = &self.polygon.vertices[e_idx+1 % self.polygon.vertices.len()];
+                                        let mut todoBool = false;
+                                        self.polygon.default_arc_between(*start, *end, todoBool);
+
                                     }
                                 }
                             }

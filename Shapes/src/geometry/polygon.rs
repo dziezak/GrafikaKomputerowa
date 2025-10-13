@@ -2,7 +2,7 @@ use super::point::Point;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ConstraintType {
-    Horizontal, // przyszlosciowa mozliwosc
+    Horizontal,
     Vertical,
     Diagonal45,
     FixedLength(f64),
@@ -15,11 +15,19 @@ pub enum EdgeType{
         control1: Point,
         control2:Point,
     },
+    Arc {
+        center: Point,
+        radius: f32,
+        clockwise: bool,
+        g1_start: bool,
+        g1_end: bool,
+    },
 }
 
 pub struct Polygon {
     pub vertices: Vec<Point>,
     pub constraints: Vec<Option<ConstraintType>>,
+    pub edge_types: Vec<EdgeType>,
 }
 
 
@@ -27,7 +35,7 @@ impl Polygon {
     //klasyk konstruktor
     pub fn new(vertices: Vec<Point>) -> Self {
         let constraints = vec![None; vertices.len()];
-        Self{vertices, constraints}
+        Self{vertices, constraints, edge_types: vec![] }
     }
 
     fn sync_constraints(&mut self){
@@ -90,7 +98,6 @@ impl Polygon {
         self.apply_constraints();
     }
 
-
     // ustawiamy ograniczenia na wybrana krawedz
     pub fn set_constaint(&mut self, edge_idx: usize, constaint: ConstraintType){
         if edge_idx < self.constraints.len() {
@@ -123,6 +130,9 @@ impl Polygon {
         };
         if self.constraints.len() != edge_count {
             self.constraints.resize(edge_count, None);
+        }
+        if self.edge_types.len() != edge_count {
+            self.edge_types.resize(edge_count, EdgeType::Line);
         }
     }
 
@@ -227,6 +237,35 @@ impl Polygon {
                 matches!(next, Some(ConstraintType::Vertical))
             }
             _=> true,
+        }
+    }
+
+    //TODO: funkcja pomocnicza do okręgu
+    pub fn default_arc_between(&self, p1: Point, p2: Point, clockwise: bool) -> EdgeType {
+        let mid = Point {
+            x: (p1.x + p2.x) / 2.0,
+            y: (p1.y + p2.y) / 2.0,
+        };
+        let dx = p2.x - p1.x;
+        let dy = p2.y - p1.y;
+        let length = (dx * dx + dy * dy).sqrt();
+        let radius = length / 2.0;
+
+        let nx = if clockwise { dy } else { -dy };
+        let ny = if clockwise { -dx } else { dx };
+        let norm = (nx * nx + ny * ny).sqrt();
+        let offset = radius / norm;
+        let center = Point {
+            x: mid.x + nx * offset,
+            y: mid.y + ny * offset,
+        };
+
+        EdgeType::Arc {
+            center,
+            radius,
+            clockwise,
+            g1_start: false,
+            g1_end: false,
         }
     }
 

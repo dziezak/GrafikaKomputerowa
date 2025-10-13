@@ -2,10 +2,11 @@ use crate::view::IPolygonDrawer::IPolygonDrawer;
 use egui::{Painter, Pos2};
 use crate::geometry::polygon::{Polygon, ConstraintType};
 use eframe::egui;
+use crate::geometry::point::Point;
 
-pub struct myPolygonDrawer;
+pub struct MyPolygonDrawer;
 
-impl myPolygonDrawer {
+impl MyPolygonDrawer {
     pub fn new() -> Self {
         Self
     }
@@ -19,7 +20,7 @@ impl myPolygonDrawer {
         );
     }
 
-    /// Implementacja algorytmu Bresenhama
+    /// Implementacja algorytmu Bresenhama TODO: czy już dziła???
     fn bresenham_line(
         painter: &egui::Painter,
         start: (i32, i32),
@@ -53,9 +54,10 @@ impl myPolygonDrawer {
             }
         }
     }
+
 }
 
-impl IPolygonDrawer for myPolygonDrawer {
+impl IPolygonDrawer for MyPolygonDrawer {
     fn draw(&self, painter: &egui::Painter, polygon: &mut Polygon) {
         polygon.ensure_constraints_len();
         let n = polygon.vertices.len();
@@ -96,6 +98,10 @@ impl IPolygonDrawer for myPolygonDrawer {
         for v in &polygon.vertices {
             painter.circle_filled(egui::pos2(v.x, v.y), 5.0, egui::Color32::RED);
         }
+    }
+
+    fn draw_arc(painter: &Painter, center: Point, radius: f32, start: Point, end: Point, clockwise: bool) {
+        todo!()
     }
 }
 
