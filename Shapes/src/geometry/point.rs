@@ -61,3 +61,9 @@ impl std::ops::Mul<f32> for Point {
     }
 }
 
+impl Point {
+    pub fn dot(&self, other: Point) -> f32 {
+        self.x * other.x + self.y * other.y
+    }
+}
+

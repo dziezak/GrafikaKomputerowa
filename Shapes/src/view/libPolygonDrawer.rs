@@ -152,12 +152,17 @@ impl IPolygonDrawer for PolygonDrawer {
         let chord_len = chord.length();
         let mid = (start + end) * 0.5;
 
-        // --- klasyczny G0 ---
+        // --- klasyczny G0–G0 ---
         if !g1_start && !g1_end {
+            let chord = end - start;
+            let chord_len = chord.length();
             let normal = Point::new(-chord.y, chord.x).normalized();
-            let center = mid + normal * (chord_len / 2.0);
-            return (center, (center - start).length());
+            let radius = chord_len / 2.0;
+            let center = (start + end) * 0.5 ;
+            return (center, radius);
         }
+
+
 
         // --- G1 continuity on start ---
         if g1_start {
@@ -167,20 +172,30 @@ impl IPolygonDrawer for PolygonDrawer {
 
                 // linia normalna do stycznej w start: center = start + normal_start * t
                 // linia prostopadła do cięciwy w połowie: center = mid + normal_chord * s
-                // rozwiązujemy dla t i s:
                 let normal_chord = Point::new(-chord.y, chord.x).normalized();
 
                 let denom = normal_start.x * normal_chord.y - normal_start.y * normal_chord.x;
                 if denom.abs() < 1e-6 {
                     // proste równoległe — fallback do G0
-                    let center = mid + normal_chord * (chord_len / 2.0);
-                    return (center, (center - start).length());
+                    let normal = Point::new(-chord.y, chord.x).normalized();
+                    let radius = chord_len / 2.0;
+                    let center = mid + normal * radius;
+                    return (center, radius);
                 }
 
-                // proste się przetną -> znajdź punkt przecięcia
+                // Punkt przecięcia prostych
                 let delta = mid - start;
                 let t = (delta.x * normal_chord.y - delta.y * normal_chord.x) / denom;
                 let center = start + normal_start * t;
+
+                // Korekta orientacji (jeśli środek wyszedł "po złej stronie")
+                let to_center = center - mid;
+                if to_center.dot(normal_chord) < 0.0 {
+                    let center = start - normal_start * t;
+                    let radius = (center - start).length();
+                    return (center, radius);
+                }
+
                 let radius = (center - start).length();
                 return (center, radius);
             }
@@ -195,23 +210,35 @@ impl IPolygonDrawer for PolygonDrawer {
 
                 let denom = normal_end.x * normal_chord.y - normal_end.y * normal_chord.x;
                 if denom.abs() < 1e-6 {
-                    let center = mid + normal_chord * (chord_len / 2.0);
-                    return (center, (center - start).length());
+                    let normal = Point::new(-chord.y, chord.x).normalized();
+                    let radius = chord_len / 2.0;
+                    let center = mid + normal * radius;
+                    return (center, radius);
                 }
 
                 let delta = mid - end;
                 let t = (delta.x * normal_chord.y - delta.y * normal_chord.x) / denom;
                 let center = end + normal_end * t;
+
+                let to_center = center - mid;
+                if to_center.dot(normal_chord) < 0.0 {
+                    let center = end - normal_end * t;
+                    let radius = (center - end).length();
+                    return (center, radius);
+                }
+
                 let radius = (center - end).length();
                 return (center, radius);
             }
         }
 
-        // fallback
+        // --- fallback ---
         let normal = Point::new(-chord.y, chord.x).normalized();
-        let center = mid + normal * (chord_len / 2.0);
-        (center, (center - start).length())
+        let radius = chord_len / 2.0;
+        let center = mid + normal * radius;
+        (center, radius)
     }
+
 
 
 }
