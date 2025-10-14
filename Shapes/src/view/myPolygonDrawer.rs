@@ -116,8 +116,15 @@ impl IPolygonDrawer for MyPolygonDrawer {
         thickness: f32,
     ) {todo!();}
 
-    fn draw_arc(&self, painter: &Painter, start: Point, end: Point, center: Point, radius: f32, stroke: Stroke, clockwise: bool) {
-        todo!()
-    }
+    fn compute_arc_geometry(
+        start: Point,
+        end: Point,
+        tangent_start: Option<Point>, // punkt kierunku dla G1 start
+        tangent_end: Option<Point>,   // punkt kierunku dla G1 end
+        g1_start: bool,
+        g1_end: bool,
+    ) -> (Point, f32) { todo!();}
+
+
 }
 

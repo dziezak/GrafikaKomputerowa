@@ -20,15 +20,13 @@ pub trait IPolygonDrawer {
         thickness: f32,
     );
 
-    fn draw_arc(
-        &self,
-        painter: &egui::Painter,
-        start: crate::geometry::point::Point,
-        end: crate::geometry::point::Point,
-        center: crate::geometry::point::Point,
-        radius: f32,
-        stroke: egui::Stroke,
-        clockwise: bool,
-    );
 
+    fn compute_arc_geometry(
+        start: Point,
+        end: Point,
+        tangent_start: Option<Point>, // punkt kierunku dla G1 start
+        tangent_end: Option<Point>,   // punkt kierunku dla G1 end
+        g1_start: bool,
+        g1_end: bool,
+    ) -> (Point, f32) where Self: Sized;
 }

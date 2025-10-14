@@ -245,21 +245,26 @@ impl App for PolygonApp {
                                             g1_end: false,
                                         };
                                         self.polygon.constraints[e_idx] = Some(constraint);
-                                        self.polygon.apply_constraints();
-                                        eprint!("context menu zareagowalo");
                                     }
                                     if let Some(ConstraintType::Arc { ref mut g1_start, ref mut g1_end})=
                                         self.polygon.constraints[e_idx]
                                     {
                                         ui.separator();
                                         ui.label("Ustaw ciaglosc luku:");
-                                        if ui.button("Przelacz G1 start").clicked(){
-                                            *g1_start = !*g1_start;
+
+                                        if ui.selectable_label(*g1_start, "G1 start").clicked() {
+                                            *g1_start = true;
+                                            *g1_end = false;
+                                            self.show_context_menu = false;
                                         }
-                                        if ui.button("Przelacz G1 end").clicked() {
-                                            *g1_end = !*g1_end;
+
+                                        if ui.selectable_label(*g1_end, "G1 end").clicked() {
+                                            *g1_end = true;
+                                            *g1_start = false;
+                                            self.show_context_menu = false;
                                         }
                                     }
+                                    self.polygon.apply_constraints();
                                 }
                             }
                         });

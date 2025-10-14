@@ -9,29 +9,13 @@ pub enum ConstraintType {
     Arc {
         g1_start: bool,
         g1_end: bool,
-    }
-}
-
-#[derive(Clone, Copy)]
-pub enum EdgeType{
-    Line,
-    Bezier {
-        control1: Point,
-        control2:Point,
     },
-    Arc {
-        center: Point,
-        radius: f32,
-        clockwise: bool,
-        g1_start: bool,
-        g1_end: bool,
-    },
+    Line
 }
 
 pub struct Polygon {
     pub vertices: Vec<Point>,
     pub constraints: Vec<Option<ConstraintType>>,
-    pub edge_types: Vec<EdgeType>,
 }
 
 
@@ -39,7 +23,7 @@ impl Polygon {
     //klasyk konstruktor
     pub fn new(vertices: Vec<Point>) -> Self {
         let constraints = vec![None; vertices.len()];
-        Self{vertices, constraints, edge_types: vec![] }
+        Self{vertices, constraints }
     }
 
     fn sync_constraints(&mut self){
@@ -134,9 +118,6 @@ impl Polygon {
         };
         if self.constraints.len() != edge_count {
             self.constraints.resize(edge_count, None);
-        }
-        if self.edge_types.len() != edge_count {
-            self.edge_types.resize(edge_count, EdgeType::Line);
         }
     }
 
