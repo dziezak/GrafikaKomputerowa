@@ -108,7 +108,7 @@ impl App for PolygonApp {
                     let mouse_point = Point { x: pos.x, y: pos.y };
 
                     if self.selection.selected_vertex.is_none() && !self.is_dragging_polygon {
-                        if self.selection.select_vertex(&self.polygon, mouse_point, 10.0).is_none() {
+                        if self.selection.select_vertex(&self.polygon, mouse_point, 15.0).is_none() {
                             self.is_dragging_polygon = true;
                             self.last_mouse_pos = Some(pos);
                         }
@@ -227,7 +227,7 @@ impl App for PolygonApp {
                                     }
                                     if ui.button("Dlugosc stala").clicked(){
                                         let start = &self.polygon.vertices[e_idx];
-                                        let end = &self.polygon.vertices[e_idx+1 % self.polygon.vertices.len()];
+                                        let end = &self.polygon.vertices[(e_idx+1) % self.polygon.vertices.len()];
                                         let dx = end.x - start.x;
                                         let dy = end.y - start.y;
                                         let length = (dx * dx + dy * dy).sqrt();
