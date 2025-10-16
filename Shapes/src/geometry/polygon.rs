@@ -1,4 +1,5 @@
-use super::point::Point;
+use crate::geometry::point::PointRole::Vertex;
+use super::point::{Continuity, Point};
 
 #[derive(Clone, Copy)]
 pub enum ConstraintType {
@@ -17,6 +18,13 @@ pub enum ConstraintType {
         g1_start: bool,
         g1_end: bool,
     },
+}
+
+#[derive(Clone, Debug)]
+pub enum ContinuityType {
+    G0,
+    G1,
+    G2,
 }
 
 pub struct Polygon {
@@ -115,6 +123,8 @@ impl Polygon {
         let mid = Point {
             x: (start.x + end.x) / 2.0,
             y: (start.y + end.y) / 2.0,
+            role: Vertex,
+            continuity: Continuity::None,
         };
 
         if end_idx == 0 {
@@ -241,6 +251,10 @@ impl Polygon {
                     self.vertices[end_idx].y = mid_y + dy * scale / 2.0;
                 }
             }
+
+            ConstraintType::Bezier {..} => {
+                //self.enforce_bezier_continuity(start_idx);
+            }
             _=> {}
         }
     }
@@ -285,6 +299,8 @@ impl Polygon {
         let mid = Point {
             x: (start.x + end.x) / 2.0,
             y: (start.y + end.y) / 2.0,
+            role: Vertex,
+            continuity: Continuity::None,
         };
 
         // Normalny wektor (prostopadły)
@@ -295,6 +311,8 @@ impl Polygon {
         let center = Point {
             x: mid.x + nx * radius,
             y: mid.y + ny * radius,
+            role: Vertex,
+            continuity: Continuity::None,
         };
 
         (center, radius)
@@ -317,7 +335,7 @@ impl Polygon {
             return None;
         }
 
-        let mid = Point { x: (start.x + end.x) / 2.0, y: (start.y + end.y) / 2.0 };
+        let mid = Point { x: (start.x + end.x) / 2.0, y: (start.y + end.y) / 2.0, role: Vertex, continuity: Continuity::None };
 
         // wysokość od środka cięciwy do środka okręgu
         let half = chord_len / 2.0;
@@ -334,7 +352,95 @@ impl Polygon {
         let cx = mid.x + sign * ux * h;
         let cy = mid.y + sign * uy * h;
 
-        Some((Point { x: cx, y: cy }, r))
+        Some((Point { x: cx, y: cy, role: Vertex, continuity: Continuity::None}, r))
+    }
+
+
+    pub fn enforce_bezier_continuity(&mut self, idx: usize) {
+        let n = self.vertices.len();
+        if n < 3 { return; }
+
+        // Poprzednia i następna krawędź względem idx
+        let prev_idx = (idx + n - 1) % n;
+        let next_idx = (idx + 1) % n;
+
+        let prev_constraint = self.constraints.get(prev_idx).and_then(|c| c.as_ref());
+        let curr_constraint = self.constraints.get(idx).and_then(|c| c.as_ref());
+
+        if let (
+            Some(ConstraintType::Bezier { control2: c2_prev, g1_end: g1_prev, .. }),
+            Some(ConstraintType::Bezier { control1: c1_curr, g1_start: g1_next, .. }),
+        ) = (prev_constraint, curr_constraint)
+        {
+            if *g1_prev || *g1_next {
+                let vertex = self.vertices[idx];
+
+                // kierunek od poprzedniego punktu kontrolnego do wierzchołka
+                let dir_x = vertex.x - c2_prev.x;
+                let dir_y = vertex.y - c2_prev.y;
+                let len = (dir_x * dir_x + dir_y * dir_y).sqrt();
+
+                if len > 1e-6 {
+                    // jednostkowy wektor kierunku
+                    let ux = dir_x / len;
+                    let uy = dir_y / len;
+
+                    // długość następnego odcinka kontrolnego
+                    let next_len = ((c1_curr.x - vertex.x).powi(2) + (c1_curr.y - vertex.y).powi(2)).sqrt();
+
+                    // Jeśli C1 – długość ta sama po obu stronach
+                    let final_len = if *g1_prev && *g1_next {
+                        next_len.min(len)
+                    } else {
+                        next_len
+                    };
+
+                    // nowa pozycja control1 – odbicie wektora kontrolnego
+                    let new_c1 = Point {
+                        x: vertex.x + ux * final_len,
+                        y: vertex.y + uy * final_len,
+                        role: Vertex,
+                        continuity: Continuity::None,
+                    };
+
+                    // przypisz nowy punkt kontrolny po stronie następnej krawędzi
+                    if let Some(Some(ConstraintType::Bezier { control1, .. })) = self.constraints.get_mut(idx) {
+                        *control1 = new_c1;
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn enforce_continuity(&mut self, i: usize) {
+        let n = self.vertices.len();
+        if n < 3 { return; }
+
+        let p = self.vertices[i];
+        if p.continuity == Continuity::None {
+            return;
+        }
+
+        let prev_i = (i + n - 1) % n;
+        let next_i = (i + 1) % n;
+
+        let prev = self.vertices[prev_i];
+        let next = self.vertices[next_i];
+
+        if p.continuity == Continuity::G1 || p.continuity == Continuity::C1 {
+            let vx = p.x - prev.x;
+            let vy = p.y - prev.y;
+            let len = (vx * vx + vy * vy).sqrt();
+            if len < 1e-6 { return; }
+
+            let ux = vx / len;
+            let uy = vy / len;
+
+            let next_len = if p.continuity == Continuity::C1 { len } else { len * 0.5 };
+
+            self.vertices[next_i].x = p.x + ux * next_len;
+            self.vertices[next_i].y = p.y + uy * next_len;
+        }
     }
 
 }

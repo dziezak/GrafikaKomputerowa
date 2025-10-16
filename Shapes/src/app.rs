@@ -3,8 +3,9 @@ use crate::view::IPolygonDrawer::IPolygonDrawer;
 use std::thread::sleep;
 use eframe::{egui, App};
 use crate::geometry::polygon::{Polygon, ConstraintType};
-use crate::geometry::point::Point;
+use crate::geometry::point::{Continuity, Point, PointRole};
 use crate::editor::selection::Selection;
+use crate::geometry::point::PointRole::Vertex;
 use crate::view::{libPolygonDrawer, PolygonDrawer};
 
 #[derive(PartialEq, Eq)]
@@ -38,10 +39,10 @@ pub struct PolygonApp {
 impl Default for PolygonApp {
     fn default() -> Self {
         let polygon = Polygon::new(vec![
-            Point { x: 100.0, y: 100.0 },
-            Point { x: 200.0, y: 100.0 },
-            Point { x: 200.0, y: 200.0 },
-            Point { x: 100.0, y: 200.0 },
+            Point { x: 100.0, y: 100.0, role: PointRole::Vertex, continuity: Continuity::None },
+            Point { x: 200.0, y: 100.0, role: PointRole::Vertex, continuity: Continuity::None },
+            Point { x: 200.0, y: 200.0, role: PointRole::Vertex, continuity: Continuity::None },
+            Point { x: 100.0, y: 200.0, role: PointRole::Vertex, continuity: Continuity::None },
         ]);
 
         Self {
@@ -105,7 +106,7 @@ impl App for PolygonApp {
             // Obsługa kliknięcia/podciągnięcia wierzchołka
             if response.dragged_by(egui::PointerButton::Primary) {
                 if let Some(pos) = response.interact_pointer_pos() {
-                    let mouse_point = Point { x: pos.x, y: pos.y };
+                    let mouse_point = Point { x: pos.x, y: pos.y, role: Vertex, continuity: Continuity::None };
 
                     if self.selection.selected_vertex.is_none() && !self.is_dragging_polygon {
                         if self.selection.select_vertex(&self.polygon, mouse_point, 15.0).is_none() {
@@ -117,7 +118,8 @@ impl App for PolygonApp {
                     if let Some(idx) = self.selection.selected_vertex {
                         let dx = pos.x - self.polygon.vertices[idx].x;
                         let dy = pos.y - self.polygon.vertices[idx].y;
-                        self.polygon.move_vertex_or_control(self.selection.selected_vertex, self.selection.selected_control, dx, dy);
+                        //self.polygon.move_vertex_or_control(self.selection.selected_vertex, self.selection.selected_control, dx, dy);
+                        self.polygon.move_vertex(self.selection.selected_vertex.unwrap(), dx, dy);
 
                         self.polygon.apply_constraints();
                     }
@@ -143,7 +145,7 @@ impl App for PolygonApp {
 
             if response.clicked_by(egui::PointerButton::Secondary){
                     if let Some(pos) = response.interact_pointer_pos() {
-                        let mouse_point = Point { x: pos.x, y: pos.y };
+                        let mouse_point = Point { x: pos.x, y: pos.y, role: Vertex, continuity: Continuity::None };
 
                         self.clicked_vertex = self.selection.select_vertex(&self.polygon, mouse_point, 10.0);
                         self.clicked_edge = self.selection.select_edge(&self.polygon, &mouse_point, 10.0);
@@ -317,10 +319,14 @@ impl App for PolygonApp {
                                                 let control1 = Point {
                                                     x: start.x + (end.x - start.x) / 3.0,
                                                     y: start.y + (end.y - start.y) / 3.0,
+                                                    role: Vertex,
+                                                    continuity: Continuity::None,
                                                 };
                                                 let control2 = Point {
                                                     x: start.x + 2.0 * (end.x - start.x) / 3.0,
                                                     y: start.y + 2.0 * (end.y - start.y) / 3.0,
+                                                    role: Vertex,
+                                                    continuity: Continuity::None,
                                                 };
                                                 self.polygon.constraints[e_idx] = Some(ConstraintType::Bezier {
                                                     control1,

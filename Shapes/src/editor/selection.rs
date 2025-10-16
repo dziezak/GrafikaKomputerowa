@@ -1,5 +1,6 @@
 use crate::geometry::polygon::{ConstraintType, Polygon};
-use crate::geometry::point::Point;
+use crate::geometry::point::{Continuity, Point};
+use crate::geometry::point::PointRole::Vertex;
 
 pub struct Selection {
     pub selected_vertex: Option<usize>,
@@ -66,14 +67,16 @@ impl Selection {
     }
 }
 fn distance_point_to_segment(p: &Point, a: &Point, b: &Point) -> f32 {
-    let ap = Point { x: p.x - a.x, y: p.y - a.y };
-    let ab = Point { x: b.x - a.x, y: b.y - a.y };
+    let ap = Point { x: p.x - a.x, y: p.y - a.y , role: Vertex, continuity: Continuity::None };
+    let ab = Point { x: b.x - a.x, y: b.y - a.y , role: Vertex, continuity: Continuity::None };
     let ab2 = ab.x * ab.x + ab.y * ab.y;
     let dot = ap.x * ab.x + ap.y * ab.y;
     let t = (dot / ab2).clamp(0.0, 1.0);
     let closest = Point {
         x: a.x + ab.x * t,
         y: a.y + ab.y * t,
+        role: Vertex,
+        continuity: Continuity::None,
     };
     closest.distance(&p)
 }
