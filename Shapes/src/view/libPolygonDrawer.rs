@@ -17,46 +17,6 @@ impl PolygonDrawer {
 }
 impl IPolygonDrawer for PolygonDrawer {
 
-    // funkcja tylko rsuje odpowiednio okrag
-    fn draw_arc_between_points(
-        &self,
-        painter: &Painter,
-        p1: Pos2,
-        p2: Pos2,
-        arc_angle: f32,
-        color: Color32,
-        thickness: f32,
-    ) {
-        let mid = Pos2::new((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
-
-        let dx = p2.x - p1.x;
-        let dy = p2.y - p1.y;
-        let chord_length = (dx * dx + dy * dy).sqrt();
-
-        let radius = chord_length / (2.0 * (arc_angle / 2.0).sin());
-
-        let chord_angle = dy.atan2(dx);
-
-        let perp_angle = chord_angle + std::f32::consts::FRAC_PI_2;
-
-        let h = (radius * radius - (chord_length / 2.0).powi(2)).sqrt();
-
-        let center = Pos2::new(mid.x + h * perp_angle.cos(), mid.y + h * perp_angle.sin());
-
-        let start_angle = (p1.y - center.y).atan2(p1.x - center.x);
-        let end_angle = (p2.y - center.y).atan2(p2.x - center.x);
-
-        let segments = 1000;
-        for i in 0..=segments {
-            let t = i as f32 / segments as f32;
-            let angle = start_angle + t * (end_angle - start_angle);
-            let x = center.x + radius * angle.cos();
-            let y = center.y + radius * angle.sin();
-            let pos = Pos2::new(x, y);
-            painter.circle_filled(pos, thickness, color);
-        }
-    }
-
 
     fn draw(&self, painter: &egui::Painter, polygon: &mut Polygon) {
         polygon.ensure_constraints_len();
@@ -103,6 +63,45 @@ impl IPolygonDrawer for PolygonDrawer {
                         1.0,
                     );
                 }
+
+                Some(ConstraintType::Bezier {control1, control2, g1_start, g1_end }) => {
+                    self.draw_dashed_polyline(
+                        painter,
+                        &[
+                            egui::pos2(start.x, start.y),
+                            egui::pos2(control1.x, control1.y),
+                            egui::pos2(control2.x, control2.y),
+                            egui::pos2(end.x, end.y),
+                        ],
+                        egui::Stroke::new(1.0, egui::Color32::WHITE),
+                    );
+                    self.draw_cubic_bezier(
+                        painter,
+                        *start,
+                        control1,
+                        control2,
+                        *end,
+                        egui::Stroke::new(1.0, egui::Color32::WHITE),
+                    );
+                    painter.circle_filled(egui::pos2(control1.x, control1.y), 4.0, egui::Color32::GRAY);
+                    painter.circle_filled(egui::pos2(control2.x, control2.y), 4.0, egui::Color32::GRAY);
+
+                    if g1_start {
+                        painter.line_segment(
+                            [egui::pos2(start.x, start.y), egui::pos2(control1.x, control1.y)],
+                            egui::Stroke::new(1.0, egui::Color32::LIGHT_BLUE),
+                        );
+                    }
+
+                    if g1_end {
+                        painter.line_segment(
+                            [egui::pos2(end.x, end.y), egui::pos2(control2.x, control2.y)],
+                            egui::Stroke::new(1.0, egui::Color32::LIGHT_BLUE),
+                        );
+                    }
+
+                }
+
                 _ => {
                     painter.line_segment(
                         [egui::pos2(start.x, start.y), egui::pos2(end.x, end.y)],
@@ -115,12 +114,14 @@ impl IPolygonDrawer for PolygonDrawer {
 
             let mid = egui::pos2((start.x + end.x) / 2.0, (start.y + end.y) / 2.0);
 
-            if let Some(constraint) = polygon.constraints.get(i).copied().flatten() {
+            //TODO czy to ok??
+            if let Some(Some(constraint)) = polygon.constraints.get(i) {
                 let text = match constraint {
                     ConstraintType::Horizontal => "H".to_string(),
                     ConstraintType::Vertical => "V".to_string(),
                     ConstraintType::Diagonal45 => "D".to_string(),
                     ConstraintType::Arc { g1_start: _, g1_end: _ } => "A".to_string(),
+                    ConstraintType::Bezier { .. } => "B".to_string(),
                     ConstraintType::FixedLength(len) => format!("{:.1}", len),
                     _=> "".to_string(),
                 };
@@ -237,6 +238,87 @@ impl IPolygonDrawer for PolygonDrawer {
         let radius = chord_len / 2.0;
         let center = mid + normal * radius;
         (center, radius)
+    }
+    // funkcja tylko rsuje odpowiednio okrag
+    fn draw_arc_between_points(
+        &self,
+        painter: &Painter,
+        p1: Pos2,
+        p2: Pos2,
+        arc_angle: f32,
+        color: Color32,
+        thickness: f32,
+    ) {
+        let mid = Pos2::new((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
+
+        let dx = p2.x - p1.x;
+        let dy = p2.y - p1.y;
+        let chord_length = (dx * dx + dy * dy).sqrt();
+
+        let radius = chord_length / (2.0 * (arc_angle / 2.0).sin());
+
+        let chord_angle = dy.atan2(dx);
+
+        let perp_angle = chord_angle + std::f32::consts::FRAC_PI_2;
+
+        let h = (radius * radius - (chord_length / 2.0).powi(2)).sqrt();
+
+        let center = Pos2::new(mid.x + h * perp_angle.cos(), mid.y + h * perp_angle.sin());
+
+        let start_angle = (p1.y - center.y).atan2(p1.x - center.x);
+        let end_angle = (p2.y - center.y).atan2(p2.x - center.x);
+
+        let segments = 1000;
+        for i in 0..=segments {
+            let t = i as f32 / segments as f32;
+            let angle = start_angle + t * (end_angle - start_angle);
+            let x = center.x + radius * angle.cos();
+            let y = center.y + radius * angle.sin();
+            let pos = Pos2::new(x, y);
+            painter.circle_filled(pos, thickness, color);
+        }
+    }
+
+    fn draw_cubic_bezier(
+        &self,
+        painter: &egui::Painter,
+        p0: Point,
+        p1: Point,
+        p2: Point,
+        p3: Point,
+        stroke: egui::Stroke,
+    ) {
+        let steps = 64;
+        let mut prev = egui::pos2(p0.x, p0.y);
+        for i in 1..=steps {
+            let t = i as f32 / steps as f32;
+            let u = 1.0 - t;
+            let x = u*u*u*p0.x + 3.0*u*u*t*p1.x + 3.0*u*t*t*p2.x + t*t*t*p3.x;
+            let y = u*u*u*p0.y + 3.0*u*u*t*p1.y + 3.0*u*t*t*p2.y + t*t*t*p3.y;
+            let cur = egui::pos2(x, y);
+            painter.line_segment([prev, cur], stroke);
+            prev = cur;
+        }
+    }
+
+    fn draw_dashed_polyline(&self, painter: &egui::Painter, pts: &[egui::Pos2], stroke: egui::Stroke) {
+        for w in pts.windows(2) {
+            let a = w[0]; let b = w[1];
+            let dir = (b - a);
+            let len = dir.length();
+            if len <= 0.0 { continue; }
+            let step = 6.0_f32; // dash length
+            let n = (len / step).ceil() as usize;
+            for i in 0..n {
+                let t0 = (i as f32) * step / len;
+                let t1 = ((i as f32) * step + step/2.0) / len; // half on, half off
+                let t0 = t0.min(1.0);
+                let t1 = t1.min(1.0);
+                let p0 = a + dir * t0;
+                let p1 = a + dir * t1;
+                painter.line_segment([p0, p1], stroke);
+            }
+        }
     }
 
 

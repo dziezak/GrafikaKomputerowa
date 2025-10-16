@@ -264,6 +264,51 @@ impl App for PolygonApp {
                                             self.show_context_menu = false;
                                         }
                                     }
+
+                                    if ui.button("Przełącz Bezier").clicked() {
+                                        match &mut self.polygon.constraints[e_idx] {
+                                            Some(ConstraintType::Bezier { .. }) => {
+                                                self.polygon.constraints[e_idx] = None;
+                                            }
+                                            _ => {
+                                                let start = self.polygon.vertices[e_idx];
+                                                let end = self.polygon.vertices[(e_idx + 1) % self.polygon.vertices.len()];
+                                                let control1 = Point {
+                                                    x: start.x + (end.x - start.x) / 3.0,
+                                                    y: start.y + (end.y - start.y) / 3.0,
+                                                };
+                                                let control2 = Point {
+                                                    x: start.x + 2.0 * (end.x - start.x) / 3.0,
+                                                    y: start.y + 2.0 * (end.y - start.y) / 3.0,
+                                                };
+                                                self.polygon.constraints[e_idx] = Some(ConstraintType::Bezier {
+                                                    control1,
+                                                    control2,
+                                                    g1_start:false,
+                                                    g1_end:false,
+                                                });
+                                            }
+                                        }
+                                    }
+
+                                    if let Some(ConstraintType::Bezier { ref mut g1_start, ref mut g1_end, .. }) =
+                                        self.polygon.constraints[e_idx]
+                                    {
+                                        ui.separator();
+                                        ui.label("Ustaw ciągłość Bezier:");
+
+                                        if ui.selectable_label(*g1_start, "G1 start").clicked() {
+                                            *g1_start = true;
+                                            *g1_end = false;
+                                        }
+
+                                        if ui.selectable_label(*g1_end, "G1 end").clicked() {
+                                            *g1_end = true;
+                                            *g1_start = false;
+                                        }
+                                    }
+
+
                                     self.polygon.apply_constraints();
                                 }
                             }

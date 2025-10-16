@@ -29,4 +29,14 @@ pub trait IPolygonDrawer {
         g1_start: bool,
         g1_end: bool,
     ) -> (Point, f32) where Self: Sized;
+    fn draw_cubic_bezier(
+        &self,
+        painter: &egui::Painter,
+        p0: Point,
+        p1: Point,
+        p2: Point,
+        p3: Point,
+        stroke: egui::Stroke,
+    );
+    fn draw_dashed_polyline(&self, painter: &egui::Painter, pts: &[egui::Pos2], stroke: egui::Stroke);
 }

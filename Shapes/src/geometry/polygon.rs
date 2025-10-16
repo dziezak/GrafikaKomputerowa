@@ -1,6 +1,6 @@
 use super::point::Point;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy)]
 pub enum ConstraintType {
     Horizontal,
     Vertical,
@@ -10,7 +10,13 @@ pub enum ConstraintType {
         g1_start: bool,
         g1_end: bool,
     },
-    Line
+    Line,
+    Bezier {
+        control1: Point,
+        control2: Point,
+        g1_start: bool,
+        g1_end: bool,
+    },
 }
 
 pub struct Polygon {

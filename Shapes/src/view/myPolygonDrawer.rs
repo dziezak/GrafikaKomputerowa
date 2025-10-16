@@ -220,8 +220,12 @@ impl IPolygonDrawer for MyPolygonDrawer {
         (center, (center - start).length())
     }
 
+    fn draw_cubic_bezier(&self, painter: &Painter, p0: Point, p1: Point, p2: Point, p3: Point, stroke: Stroke) {
+        todo!()
+    }
 
-
-
+    fn draw_dashed_polyline(&self, painter: &Painter, pts: &[Pos2], stroke: Stroke) {
+        todo!()
+    }
 }
 
