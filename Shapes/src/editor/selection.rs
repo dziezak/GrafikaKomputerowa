@@ -1,22 +1,48 @@
-use crate::geometry::polygon::Polygon;
+use crate::geometry::polygon::{ConstraintType, Polygon};
 use crate::geometry::point::Point;
 
 pub struct Selection {
     pub selected_vertex: Option<usize>,
+    pub selected_control: Option<(usize, u8)>,
 }
 
 impl Selection {
     pub fn new() -> Self {
-        Self{ selected_vertex: None}
+        Self
+        {
+            selected_vertex: None,
+            selected_control: None,
+        }
     }
 
-    pub fn select_vertex(&mut self, polygon: &Polygon, mouse_pos:Point, radius: f32) -> Option<usize> {
-        let result = polygon.vertices
-            .iter()
-            .position(|v| v.distance(&mouse_pos) < radius);
-        self.selected_vertex = result;
-        result
+    //TODO: tutaj jest problem bo musi byc mozliwosc wyboru wierzcholka kontrolnego Beziera
+    pub fn select_vertex(&mut self, polygon: &Polygon, mouse_pos: Point, radius: f32) -> Option<usize> {
+        if let Some(idx) = polygon.vertices.iter().position(|v| v.distance(&mouse_pos) < radius) {
+            self.selected_vertex = Some(idx);
+            return Some(idx);
+        }
+
+        for (i, constraint_opt) in polygon.constraints.iter().enumerate() {
+            if let Some(ConstraintType::Bezier { control1, control2, .. }) = constraint_opt {
+                if control1.distance(&mouse_pos) < radius {
+                    self.selected_vertex = None;
+                    self.selected_control = Some((i, 1));
+                    return None;
+                }
+                if control2.distance(&mouse_pos) < radius {
+                    self.selected_vertex = None;
+                    self.selected_control = Some((i, 2));
+                    return None;
+                }
+            }
+        }
+
+        self.selected_vertex = None;
+        self.selected_control = None;
+        None
     }
+
+
 
     pub fn select_edge(&self, polygon: &Polygon, mouse: &Point, radius: f32) -> Option<usize> {
         let mut closest = None;

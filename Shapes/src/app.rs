@@ -117,7 +117,8 @@ impl App for PolygonApp {
                     if let Some(idx) = self.selection.selected_vertex {
                         let dx = pos.x - self.polygon.vertices[idx].x;
                         let dy = pos.y - self.polygon.vertices[idx].y;
-                        self.polygon.move_vertex(idx, dx, dy);
+                        self.polygon.move_vertex_or_control(self.selection.selected_vertex, self.selection.selected_control, dx, dy);
+
                         self.polygon.apply_constraints();
                     }
                     else if self.is_dragging_polygon {
@@ -153,6 +154,46 @@ impl App for PolygonApp {
                 }
 
             self.drawer.draw(&painter, &mut self.polygon);
+
+            /// --- interakcja z punktami kontrolnymi krzywych Beziera ---
+            for (e_idx, constraint_opt) in self.polygon.constraints.iter_mut().enumerate() {
+                if let Some(ConstraintType::Bezier { control1, control2, .. }) = constraint_opt {
+                    // Pozycje kontrolek
+                    let c1_pos = egui::pos2(control1.x, control1.y);
+                    let c2_pos = egui::pos2(control2.x, control2.y);
+
+                    // Zrób z nich "uchwyty"
+                    let c1_response = ui.interact(
+                        egui::Rect::from_center_size(c1_pos, egui::vec2(10.0, 10.0)),
+                        ui.id().with(format!("ctrl1_{}", e_idx)),
+                        egui::Sense::drag(),
+                    );
+                    let c2_response = ui.interact(
+                        egui::Rect::from_center_size(c2_pos, egui::vec2(10.0, 10.0)),
+                        ui.id().with(format!("ctrl2_{}", e_idx)),
+                        egui::Sense::drag(),
+                    );
+
+                    // Rysuj "uchwyty"
+                    painter.circle_filled(c1_pos, 5.0, egui::Color32::from_rgb(180, 180, 180));
+                    painter.circle_filled(c2_pos, 5.0, egui::Color32::from_rgb(180, 180, 180));
+
+                    // Obsługa przeciągania
+                    if c1_response.dragged() {
+                        let delta = c1_response.drag_delta();
+                        control1.x += delta.x;
+                        control1.y += delta.y;
+                        ctx.request_repaint(); // odśwież
+                    }
+                    if c2_response.dragged() {
+                        let delta = c2_response.drag_delta();
+                        control2.x += delta.x;
+                        control2.y += delta.y;
+                        ctx.request_repaint();
+                    }
+                }
+            }
+
 
 
             if self.show_context_menu {
@@ -308,7 +349,6 @@ impl App for PolygonApp {
                                         }
                                     }
 
-
                                     self.polygon.apply_constraints();
                                 }
                             }
@@ -384,8 +424,8 @@ impl App for PolygonApp {
         }
     );
 
-    // Panel boczny z informacją o wybranym wierzchołku
-    egui::SidePanel::right("sidebar").show(ctx, |ui| {
+        // Panel boczny z informacją o wybranym wierzchołku
+        egui::SidePanel::right("sidebar").show(ctx, |ui| {
             ui.heading("Wybrany wierzchołek");
             if let Some(idx) = self.selection.selected_vertex {
                 let v = &self.polygon.vertices[idx];

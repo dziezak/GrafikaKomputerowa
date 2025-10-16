@@ -38,9 +38,51 @@ impl Polygon {
         }
     }
 
+    //normal move
     pub fn move_vertex(&mut self, index: usize, dx:f32, dy: f32){
         if let Some(v) = self.vertices.get_mut(index){
             v.translate(dx, dy);
+        }
+    }
+
+
+    //better move
+    pub fn move_vertex_or_control(
+        &mut self,
+        vertex_index: Option<usize>,
+        control: Option<(usize, u8)>,
+        dx: f32,
+        dy: f32,
+    ) {
+        if let Some(i) = vertex_index {
+            if let Some(v) = self.vertices.get_mut(i) {
+                v.translate(dx, dy);
+            }
+
+            for constraint_opt in self.constraints.iter_mut() {
+                if let Some(ConstraintType::Bezier { control1, control2, g1_start, g1_end }) =
+                    constraint_opt
+                {
+                    if *g1_start && i == 0 {
+                        control1.translate(dx / 2.0, dy / 2.0);
+                    }
+                    if *g1_end && i == self.vertices.len() - 1 {
+                        control2.translate(dx / 2.0, dy / 2.0);
+                    }
+                }
+            }
+        }
+
+        if let Some((edge_idx, ctrl_num)) = control {
+            if let Some(ConstraintType::Bezier { control1, control2, .. }) =
+                self.constraints.get_mut(edge_idx).and_then(|x| x.as_mut())
+            {
+                match ctrl_num {
+                    1 => control1.translate(dx, dy),
+                    2 => control2.translate(dx, dy),
+                    _ => {}
+                }
+            }
         }
     }
 

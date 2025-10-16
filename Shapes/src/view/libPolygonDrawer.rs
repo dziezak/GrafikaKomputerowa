@@ -135,11 +135,50 @@ impl IPolygonDrawer for PolygonDrawer {
             }
         }
 
-        for v in &polygon.vertices {
+        for v in &polygon.vertices { //TODO można zmieniac kolor jak jesteś nad nim
             painter.circle_filled(egui::pos2(v.x, v.y), 5.0, egui::Color32::RED);
         }
     }
 
+    // funkcja tylko rsuje odpowiednio okrag
+    fn draw_arc_between_points(
+        &self,
+        painter: &Painter,
+        p1: Pos2,
+        p2: Pos2,
+        arc_angle: f32,
+        color: Color32,
+        thickness: f32,
+    ) {
+        let mid = Pos2::new((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
+
+        let dx = p2.x - p1.x;
+        let dy = p2.y - p1.y;
+        let chord_length = (dx * dx + dy * dy).sqrt();
+
+        let radius = chord_length / (2.0 * (arc_angle / 2.0).sin());
+
+        let chord_angle = dy.atan2(dx);
+
+        let perp_angle = chord_angle + std::f32::consts::FRAC_PI_2;
+
+        let h = (radius * radius - (chord_length / 2.0).powi(2)).sqrt();
+
+        let center = Pos2::new(mid.x + h * perp_angle.cos(), mid.y + h * perp_angle.sin());
+
+        let start_angle = (p1.y - center.y).atan2(p1.x - center.x);
+        let end_angle = (p2.y - center.y).atan2(p2.x - center.x);
+
+        let segments = 1000;
+        for i in 0..=segments {
+            let t = i as f32 / segments as f32;
+            let angle = start_angle + t * (end_angle - start_angle);
+            let x = center.x + radius * angle.cos();
+            let y = center.y + radius * angle.sin();
+            let pos = Pos2::new(x, y);
+            painter.circle_filled(pos, thickness, color);
+        }
+    }
     fn compute_arc_geometry(
         start: Point,
         end: Point,
@@ -238,45 +277,6 @@ impl IPolygonDrawer for PolygonDrawer {
         let radius = chord_len / 2.0;
         let center = mid + normal * radius;
         (center, radius)
-    }
-    // funkcja tylko rsuje odpowiednio okrag
-    fn draw_arc_between_points(
-        &self,
-        painter: &Painter,
-        p1: Pos2,
-        p2: Pos2,
-        arc_angle: f32,
-        color: Color32,
-        thickness: f32,
-    ) {
-        let mid = Pos2::new((p1.x + p2.x) / 2.0, (p1.y + p2.y) / 2.0);
-
-        let dx = p2.x - p1.x;
-        let dy = p2.y - p1.y;
-        let chord_length = (dx * dx + dy * dy).sqrt();
-
-        let radius = chord_length / (2.0 * (arc_angle / 2.0).sin());
-
-        let chord_angle = dy.atan2(dx);
-
-        let perp_angle = chord_angle + std::f32::consts::FRAC_PI_2;
-
-        let h = (radius * radius - (chord_length / 2.0).powi(2)).sqrt();
-
-        let center = Pos2::new(mid.x + h * perp_angle.cos(), mid.y + h * perp_angle.sin());
-
-        let start_angle = (p1.y - center.y).atan2(p1.x - center.x);
-        let end_angle = (p2.y - center.y).atan2(p2.x - center.x);
-
-        let segments = 1000;
-        for i in 0..=segments {
-            let t = i as f32 / segments as f32;
-            let angle = start_angle + t * (end_angle - start_angle);
-            let x = center.x + radius * angle.cos();
-            let y = center.y + radius * angle.sin();
-            let pos = Pos2::new(x, y);
-            painter.circle_filled(pos, thickness, color);
-        }
     }
 
     fn draw_cubic_bezier(
