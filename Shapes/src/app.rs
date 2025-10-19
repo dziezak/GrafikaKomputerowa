@@ -218,9 +218,27 @@ impl App for PolygonApp {
                                         self.show_context_menu = false;
                                         self.polygon.apply_constraints();
                                     }
+                                    if ui.button("Ustaw G0").clicked() {
+                                        if let Some(v_idx) = self.clicked_vertex {
+                                            self.polygon.vertices[v_idx].continuity = Continuity::G0;
+                                            self.polygon.apply_constraints();
+                                        }
+                                    }
+                                    if ui.button("Ustaw C1").clicked() {
+                                        if let Some(v_idx) = self.clicked_vertex {
+                                            self.polygon.vertices[v_idx].continuity = Continuity::C1;
+                                            self.polygon.apply_constraints();
+                                        }
+                                    }
+                                    if ui.button("Ustaw G1").clicked() {
+                                        if let Some(v_idx) = self.clicked_vertex {
+                                            self.polygon.vertices[v_idx].continuity = Continuity::G1;
+                                            self.polygon.apply_constraints();
+                                        }
+                                    }
                                 }else if let Some(e_idx) = self.clicked_edge {
                                     if ui.button("dodaj wierzcholek").clicked(){
-                                        self.polygon.add_vertex_mid_edge(e_idx, e_idx+1); //TODO tutaj jest problem bo nie da sie dodac wiierzcholka za ostatnia krawedzia
+                                        self.polygon.add_vertex_mid_edge(e_idx, e_idx+1);
                                         self.show_context_menu = false;
                                         self.polygon.apply_constraints();
                                     }
@@ -333,28 +351,12 @@ impl App for PolygonApp {
                                                     control2,
                                                     g1_start:false,
                                                     g1_end:false,
+                                                    c1_start: false,
+                                                    c1_end: false,
                                                 });
                                             }
                                         }
                                     }
-
-                                    if let Some(ConstraintType::Bezier { ref mut g1_start, ref mut g1_end, .. }) =
-                                        self.polygon.constraints[e_idx]
-                                    {
-                                        ui.separator();
-                                        ui.label("Ustaw ciągłość Bezier:");
-
-                                        if ui.selectable_label(*g1_start, "G1 start").clicked() {
-                                            *g1_start = true;
-                                            *g1_end = false;
-                                        }
-
-                                        if ui.selectable_label(*g1_end, "G1 end").clicked() {
-                                            *g1_end = true;
-                                            *g1_start = false;
-                                        }
-                                    }
-
                                     self.polygon.apply_constraints();
                                 }
                             }

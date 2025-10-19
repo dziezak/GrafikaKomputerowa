@@ -64,7 +64,7 @@ impl IPolygonDrawer for PolygonDrawer {
                     );
                 }
 
-                Some(ConstraintType::Bezier {control1, control2, g1_start, g1_end }) => {
+                Some(ConstraintType::Bezier {control1, control2, g1_start, g1_end, c1_start, c1_end }) => {
                     self.draw_dashed_polyline(
                         painter,
                         &[

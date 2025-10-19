@@ -1,5 +1,5 @@
 use crate::geometry::point::PointRole::Vertex;
-use super::point::{Continuity, Point};
+use super::point::{Continuity, Point, PointRole};
 
 #[derive(Clone, Copy)]
 pub enum ConstraintType {
@@ -17,6 +17,8 @@ pub enum ConstraintType {
         control2: Point,
         g1_start: bool,
         g1_end: bool,
+        c1_start: bool,
+        c1_end: bool,
     },
 }
 
@@ -51,47 +53,7 @@ impl Polygon {
         if let Some(v) = self.vertices.get_mut(index){
             v.translate(dx, dy);
         }
-    }
-
-
-    //better move
-    pub fn move_vertex_or_control(
-        &mut self,
-        vertex_index: Option<usize>,
-        control: Option<(usize, u8)>,
-        dx: f32,
-        dy: f32,
-    ) {
-        if let Some(i) = vertex_index {
-            if let Some(v) = self.vertices.get_mut(i) {
-                v.translate(dx, dy);
-            }
-
-            for constraint_opt in self.constraints.iter_mut() {
-                if let Some(ConstraintType::Bezier { control1, control2, g1_start, g1_end }) =
-                    constraint_opt
-                {
-                    if *g1_start && i == 0 {
-                        control1.translate(dx / 2.0, dy / 2.0);
-                    }
-                    if *g1_end && i == self.vertices.len() - 1 {
-                        control2.translate(dx / 2.0, dy / 2.0);
-                    }
-                }
-            }
-        }
-
-        if let Some((edge_idx, ctrl_num)) = control {
-            if let Some(ConstraintType::Bezier { control1, control2, .. }) =
-                self.constraints.get_mut(edge_idx).and_then(|x| x.as_mut())
-            {
-                match ctrl_num {
-                    1 => control1.translate(dx, dy),
-                    2 => control2.translate(dx, dy),
-                    _ => {}
-                }
-            }
-        }
+        //self.enforce_vertex_continuity_after_vertex_move(index);
     }
 
     //usun wierzcholek
@@ -252,9 +214,97 @@ impl Polygon {
                 }
             }
 
-            ConstraintType::Bezier {..} => {
-                //self.enforce_bezier_continuity(start_idx);
+            ConstraintType::Bezier { .. } => {
+                let n = self.vertices.len();
+                if n < 2 {
+                    return;
+                }
+
+                let v_start = self.vertices[start_idx];
+                let v_end = self.vertices[end_idx];
+                let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
+                let next_idx = (end_idx + 1) % n;
+
+                //
+                // --- Jeśli ruszono początek tej krzywej ---
+                //
+                if let Some(ConstraintType::Bezier { control1, .. }) =
+                    self.constraints.get_mut(start_idx).and_then(|c| c.as_mut())
+                {
+                    let cont = v_start.continuity;
+                    let prev = self.vertices[prev_idx];
+
+                    let new_control1 = match cont {
+                        Continuity::G1 => Point {
+                            x: 2.0 * v_start.x - prev.x,
+                            y: 2.0 * v_start.y - prev.y,
+                            role: PointRole::Control,
+                            continuity: cont,
+                        },
+                        Continuity::C1 => {
+                            let dx = v_start.x - prev.x;
+                            let dy = v_start.y - prev.y;
+                            Point {
+                                x: v_start.x + dx,
+                                y: v_start.y + dy,
+                                role: PointRole::Control,
+                                continuity: cont,
+                            }
+                        }
+                        _ => *control1,
+                    };
+
+                    *control1 = new_control1;
+
+                    // aktualizuj poprzednią krzywą (odbicie control2)
+                    if let Some(ConstraintType::Bezier { control2, .. }) =
+                        self.constraints.get_mut(prev_idx).and_then(|c| c.as_mut())
+                    {
+                        *control2 = Point {
+                            x: 2.0 * v_start.x - new_control1.x,
+                            y: 2.0 * v_start.y - new_control1.y,
+                            role: PointRole::Control,
+                            continuity: cont,
+                        };
+                    }
+                }
+
+                //
+                // --- Jeśli ruszono koniec tej krzywej ---
+                //
+                if let Some(ConstraintType::Bezier { control2, .. }) =
+                    self.constraints.get_mut(start_idx).and_then(|c| c.as_mut())
+                {
+                    eprintln!("CHUJ");
+                    let cont = v_end.continuity;
+                    let next = self.vertices[next_idx];
+
+                    let new_control2 = match cont {
+                        Continuity::G1 => Point {
+                            x: 2.0 * v_end.x - next.x,
+                            y: 2.0 * v_end.y - next.y,
+                            role: PointRole::Control,
+                            continuity: cont,
+                        },
+                        Continuity::C1 => {
+                            let dx = v_end.x - next.x;
+                            let dy = v_end.y - next.y;
+                            Point {
+                                x: v_end.x + dx,
+                                y: v_end.y + dy,
+                                role: PointRole::Control,
+                                continuity: cont,
+                            }
+                        }
+                        _ => *control2,
+                    };
+
+                    *control2 = new_control2;
+
+                }
             }
+
+
             _=> {}
         }
     }
@@ -356,90 +406,48 @@ impl Polygon {
     }
 
 
-    pub fn enforce_bezier_continuity(&mut self, idx: usize) {
+    //Bezier contuity logic
+
+    pub fn enforce_vertex_continuity_after_vertex_move(&mut self, vertex_idx: usize) {
+        const EPS: f32 = 1e-6;
+
         let n = self.vertices.len();
-        if n < 3 { return; }
-
-        // Poprzednia i następna krawędź względem idx
-        let prev_idx = (idx + n - 1) % n;
-        let next_idx = (idx + 1) % n;
-
-        let prev_constraint = self.constraints.get(prev_idx).and_then(|c| c.as_ref());
-        let curr_constraint = self.constraints.get(idx).and_then(|c| c.as_ref());
-
-        if let (
-            Some(ConstraintType::Bezier { control2: c2_prev, g1_end: g1_prev, .. }),
-            Some(ConstraintType::Bezier { control1: c1_curr, g1_start: g1_next, .. }),
-        ) = (prev_constraint, curr_constraint)
-        {
-            if *g1_prev || *g1_next {
-                let vertex = self.vertices[idx];
-
-                // kierunek od poprzedniego punktu kontrolnego do wierzchołka
-                let dir_x = vertex.x - c2_prev.x;
-                let dir_y = vertex.y - c2_prev.y;
-                let len = (dir_x * dir_x + dir_y * dir_y).sqrt();
-
-                if len > 1e-6 {
-                    // jednostkowy wektor kierunku
-                    let ux = dir_x / len;
-                    let uy = dir_y / len;
-
-                    // długość następnego odcinka kontrolnego
-                    let next_len = ((c1_curr.x - vertex.x).powi(2) + (c1_curr.y - vertex.y).powi(2)).sqrt();
-
-                    // Jeśli C1 – długość ta sama po obu stronach
-                    let final_len = if *g1_prev && *g1_next {
-                        next_len.min(len)
-                    } else {
-                        next_len
-                    };
-
-                    // nowa pozycja control1 – odbicie wektora kontrolnego
-                    let new_c1 = Point {
-                        x: vertex.x + ux * final_len,
-                        y: vertex.y + uy * final_len,
-                        role: Vertex,
-                        continuity: Continuity::None,
-                    };
-
-                    // przypisz nowy punkt kontrolny po stronie następnej krawędzi
-                    if let Some(Some(ConstraintType::Bezier { control1, .. })) = self.constraints.get_mut(idx) {
-                        *control1 = new_c1;
-                    }
-                }
-            }
-        }
-    }
-
-    pub fn enforce_continuity(&mut self, i: usize) {
-        let n = self.vertices.len();
-        if n < 3 { return; }
-
-        let p = self.vertices[i];
-        if p.continuity == Continuity::None {
+        if n < 2 {
             return;
         }
 
-        let prev_i = (i + n - 1) % n;
-        let next_i = (i + 1) % n;
+        let v_curr = self.vertices[vertex_idx];
+        let v_prev_idx = if vertex_idx == 0 { n - 1 } else { vertex_idx - 1 };
+        let v_prev = self.vertices[v_prev_idx];
 
-        let prev = self.vertices[prev_i];
-        let next = self.vertices[next_i];
+        let next_edge = vertex_idx % n;
 
-        if p.continuity == Continuity::G1 || p.continuity == Continuity::C1 {
-            let vx = p.x - prev.x;
-            let vy = p.y - prev.y;
-            let len = (vx * vx + vy * vy).sqrt();
-            if len < 1e-6 { return; }
-
-            let ux = vx / len;
-            let uy = vy / len;
-
-            let next_len = if p.continuity == Continuity::C1 { len } else { len * 0.5 };
-
-            self.vertices[next_i].x = p.x + ux * next_len;
-            self.vertices[next_i].y = p.y + uy * next_len;
+        // Znajdź krzywą Beziera wychodzącą z aktualnego wierzchołka
+        if let Some(Some(ConstraintType::Bezier { control1, .. })) =
+            self.constraints.get_mut(next_edge)
+        {
+            match v_curr.continuity {
+                Continuity::G0 | Continuity::None => {
+                    // nic nie wymuszamy
+                }
+                Continuity::G1 => {
+                    // odbicie poprzedniego wierzchołka względem aktualnego vertexa
+                    control1.x = 2.0 * v_curr.x - v_prev.x;
+                    control1.y = 2.0 * v_curr.y - v_prev.y;
+                }
+                Continuity::C1 => {
+                    // odbicie względem vertexa, ale z zachowaniem długości
+                    let dx = v_curr.x - v_prev.x;
+                    let dy = v_curr.y - v_prev.y;
+                    let len = (dx * dx + dy * dy).sqrt();
+                    if len > EPS {
+                        let ux = dx / len;
+                        let uy = dy / len;
+                        control1.x = v_curr.x + ux * len;
+                        control1.y = v_curr.y + uy * len;
+                    }
+                }
+            }
         }
     }
 
