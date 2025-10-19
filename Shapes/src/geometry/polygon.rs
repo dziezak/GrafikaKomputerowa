@@ -273,7 +273,7 @@ impl Polygon {
                 if let Some(ConstraintType::Bezier { control2, .. }) =
                     self.constraints.get_mut(start_idx).and_then(|c| c.as_mut())
                 {
-                    eprintln!("CHUJ");
+                    //eprintln!("CHUJ");
                     let cont = v_end.continuity;
                     let next = self.vertices[next_idx];
 
@@ -402,5 +402,94 @@ impl Polygon {
 
         Some((Point { x: cx, y: cy, role: Vertex, continuity: Continuity::None}, r))
     }
+
+    ///BEZIER
+
+    pub fn enforce_bezier_control_move(&mut self, edge_idx: usize, is_control1: bool) {
+        // 1️⃣ Wyciągamy opcjonalnie constraint na ten segment
+        if let Some(ConstraintType::Bezier {
+                        control1,
+                        control2,
+                        g1_start,
+                        g1_end,
+                        c1_start,
+                        c1_end,
+                    }) = self.constraints.get(edge_idx).and_then(|c| c.as_ref())
+        {
+            // 2️⃣ Tworzymy lokalną kopię punktów kontrolnych
+            let mut new_control1 = *control1;
+            let mut new_control2 = *control2;
+
+            // Pobieramy wierzchołki segmentu
+            let start_vertex = self.vertices[edge_idx];
+            let end_vertex = self.vertices[(edge_idx + 1) % self.vertices.len()];
+
+            // 3️⃣ Modyfikacja w zależności który punkt kontrolny ruszamy
+            if is_control1 {
+                // Odbicie / G1 / C1 względem poprzedniego wierzchołka
+                let prev_idx = if edge_idx == 0 {
+                    self.vertices.len() - 1
+                } else {
+                    edge_idx - 1
+                };
+                let prev_vertex = self.vertices[prev_idx];
+
+                match start_vertex.continuity {
+                    Continuity::G1 => {
+                        new_control1.x = 2.0 * start_vertex.x - prev_vertex.x;
+                        new_control1.y = 2.0 * start_vertex.y - prev_vertex.y;
+                    }
+                    Continuity::C1 => {
+                        let dx = start_vertex.x - prev_vertex.x;
+                        let dy = start_vertex.y - prev_vertex.y;
+                        new_control1.x = start_vertex.x + dx;
+                        new_control1.y = start_vertex.y + dy;
+                    }
+                    _ => {}
+                }
+            } else {
+                // Odbicie / G1 / C1 względem następnego wierzchołka
+                let next_idx = (edge_idx + 1) % self.vertices.len();
+                let next_vertex = self.vertices[next_idx];
+
+                match end_vertex.continuity {
+                    Continuity::G1 => {
+                        new_control2.x = 2.0 * end_vertex.x - next_vertex.x;
+                        new_control2.y = 2.0 * end_vertex.y - next_vertex.y;
+                    }
+                    Continuity::C1 => {
+                        let dx = end_vertex.x - next_vertex.x;
+                        let dy = end_vertex.y - next_vertex.y;
+                        new_control2.x = end_vertex.x + dx;
+                        new_control2.y = end_vertex.y + dy;
+                    }
+                    _ => {}
+                }
+            }
+
+            // 4️⃣ Zapisujemy zmodyfikowane kontrolki z powrotem
+            if let Some(ConstraintType::Bezier {
+                            control1,
+                            control2,
+                            ..
+                        }) = self.constraints.get_mut(edge_idx).and_then(|c| c.as_mut())
+            {
+                *control1 = new_control1;
+                *control2 = new_control2;
+            }
+
+            // 5️⃣ Wymuszenie pozostałych constraints
+            self.apply_constraints();
+        }
+    }
+    pub fn mirror_point(center: Point, target: Point) -> Point {
+        Point {
+            x: 2.0 * center.x - target.x,
+            y: 2.0 * center.y - target.y,
+            role: target.role,
+            continuity: target.continuity,
+        }
+    }
+
 
 }

@@ -157,8 +157,11 @@ impl App for PolygonApp {
 
             self.drawer.draw(&painter, &mut self.polygon);
 
-            /// --- interakcja z punktami kontrolnymi krzywych Beziera ---
-            for (e_idx, constraint_opt) in self.polygon.constraints.iter_mut().enumerate() {
+
+            // 1️⃣ Krok: Zbieranie ruchów uchwytów
+            let mut moved_controls: Vec<(usize, bool, egui::Vec2)> = Vec::new();
+
+            for (e_idx, constraint_opt) in self.polygon.constraints.iter().enumerate() {
                 if let Some(ConstraintType::Bezier { control1, control2, .. }) = constraint_opt {
                     // Pozycje kontrolek
                     let c1_pos = egui::pos2(control1.x, control1.y);
@@ -176,25 +179,41 @@ impl App for PolygonApp {
                         egui::Sense::drag(),
                     );
 
-                    // Rysuj "uchwyty"
+                    // Rysuj uchwyty
                     painter.circle_filled(c1_pos, 5.0, egui::Color32::from_rgb(180, 180, 180));
                     painter.circle_filled(c2_pos, 5.0, egui::Color32::from_rgb(180, 180, 180));
 
-                    // Obsługa przeciągania
+                    // Jeśli przeciągnięto, zapisz delta
                     if c1_response.dragged() {
-                        let delta = c1_response.drag_delta();
-                        control1.x += delta.x;
-                        control1.y += delta.y;
-                        ctx.request_repaint(); // odśwież
+                        moved_controls.push((e_idx, true, c1_response.drag_delta()));
                     }
                     if c2_response.dragged() {
-                        let delta = c2_response.drag_delta();
-                        control2.x += delta.x;
-                        control2.y += delta.y;
-                        ctx.request_repaint();
+                        moved_controls.push((e_idx, false, c2_response.drag_delta()));
                     }
                 }
             }
+
+            // 2️⃣ Krok: Zastosowanie ruchów i wymuszenie ciągłości
+            for (e_idx, is_control1, delta) in moved_controls {
+                if let Some(ConstraintType::Bezier { control1, control2, .. }) =
+                    self.polygon.constraints.get_mut(e_idx).and_then(|c| c.as_mut())
+                {
+                    if is_control1 {
+                        control1.x += delta.x;
+                        control1.y += delta.y;
+                    } else {
+                        control2.x += delta.x;
+                        control2.y += delta.y;
+                    }
+
+                    // Wywołanie funkcji, która dopasuje pozostałe punkty w oparciu o G1/C1
+                    //self.polygon.enforce_bezier_control_move(e_idx, is_control1);
+                }
+            }
+
+            // 3️⃣ Na końcu odświeżamy canvas
+            ctx.request_repaint();
+
 
 
 
