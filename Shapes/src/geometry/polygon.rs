@@ -225,9 +225,7 @@ impl Polygon {
                 let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
                 let next_idx = (end_idx + 1) % n;
 
-                //
                 // --- Jeśli ruszono początek tej krzywej ---
-                //
                 if let Some(ConstraintType::Bezier { control1, .. }) =
                     self.constraints.get_mut(start_idx).and_then(|c| c.as_mut())
                 {
@@ -403,52 +401,6 @@ impl Polygon {
         let cy = mid.y + sign * uy * h;
 
         Some((Point { x: cx, y: cy, role: Vertex, continuity: Continuity::None}, r))
-    }
-
-
-    //Bezier contuity logic
-
-    pub fn enforce_vertex_continuity_after_vertex_move(&mut self, vertex_idx: usize) {
-        const EPS: f32 = 1e-6;
-
-        let n = self.vertices.len();
-        if n < 2 {
-            return;
-        }
-
-        let v_curr = self.vertices[vertex_idx];
-        let v_prev_idx = if vertex_idx == 0 { n - 1 } else { vertex_idx - 1 };
-        let v_prev = self.vertices[v_prev_idx];
-
-        let next_edge = vertex_idx % n;
-
-        // Znajdź krzywą Beziera wychodzącą z aktualnego wierzchołka
-        if let Some(Some(ConstraintType::Bezier { control1, .. })) =
-            self.constraints.get_mut(next_edge)
-        {
-            match v_curr.continuity {
-                Continuity::G0 | Continuity::None => {
-                    // nic nie wymuszamy
-                }
-                Continuity::G1 => {
-                    // odbicie poprzedniego wierzchołka względem aktualnego vertexa
-                    control1.x = 2.0 * v_curr.x - v_prev.x;
-                    control1.y = 2.0 * v_curr.y - v_prev.y;
-                }
-                Continuity::C1 => {
-                    // odbicie względem vertexa, ale z zachowaniem długości
-                    let dx = v_curr.x - v_prev.x;
-                    let dy = v_curr.y - v_prev.y;
-                    let len = (dx * dx + dy * dy).sqrt();
-                    if len > EPS {
-                        let ux = dx / len;
-                        let uy = dy / len;
-                        control1.x = v_curr.x + ux * len;
-                        control1.y = v_curr.y + uy * len;
-                    }
-                }
-            }
-        }
     }
 
 }
