@@ -233,15 +233,29 @@ impl Polygon {
                     let prev = self.vertices[prev_idx];
 
                     let new_control1 = match cont {
-                        Continuity::G1 => Point {
-                            x: 2.0 * v_start.x - prev.x,
-                            y: 2.0 * v_start.y - prev.y,
-                            role: PointRole::Control,
-                            continuity: cont,
+                        Continuity::G1 =>{
+                            let dir_x = v_start.x - prev.x;
+                            let dir_y = v_start.y - prev.y;
+                            let len = (dir_x * dir_x + dir_y * dir_y).sqrt();
+
+                            if len < std::f32::EPSILON {
+                            *control1 // nie zmieniamy, bo nie ma sensu
+                            } else {
+                                let current_len = ((control1.x - v_start.x).powi(2) + (control1.y - v_start.y).powi(2)).sqrt();
+                                let norm_x = dir_x / len;
+                                let norm_y = dir_y / len;
+
+                                Point {
+                                    x: v_start.x + norm_x * current_len,
+                                    y: v_start.y + norm_y * current_len,
+                                    role: PointRole::Control,
+                                    continuity: cont,
+                                }
+                            }
                         },
                         Continuity::C1 => {
-                            let dx = v_start.x - prev.x;
-                            let dy = v_start.y - prev.y;
+                            let dx = (v_start.x - prev.x)/3.0;
+                            let dy = (v_start.y - prev.y)/3.0;
                             Point {
                                 x: v_start.x + dx,
                                 y: v_start.y + dy,
@@ -255,16 +269,7 @@ impl Polygon {
                     *control1 = new_control1;
 
                     // aktualizuj poprzednią krzywą (odbicie control2)
-                    if let Some(ConstraintType::Bezier { control2, .. }) =
-                        self.constraints.get_mut(prev_idx).and_then(|c| c.as_mut())
-                    {
-                        *control2 = Point {
-                            x: 2.0 * v_start.x - new_control1.x,
-                            y: 2.0 * v_start.y - new_control1.y,
-                            role: PointRole::Control,
-                            continuity: cont,
-                        };
-                    }
+
                 }
 
                 //
@@ -278,15 +283,29 @@ impl Polygon {
                     let next = self.vertices[next_idx];
 
                     let new_control2 = match cont {
-                        Continuity::G1 => Point {
-                            x: 2.0 * v_end.x - next.x,
-                            y: 2.0 * v_end.y - next.y,
-                            role: PointRole::Control,
-                            continuity: cont,
+                        Continuity::G1 => {
+                            let dir_x = v_end.x - next.x;
+                            let dir_y = v_end.y - next.y;
+                            let len = (dir_x * dir_x + dir_y * dir_y).sqrt();
+
+                            if len < std::f32::EPSILON {
+                                *control2 // nie zmieniamy, bo nie ma sensu
+                            } else {
+                                let current_len = ((control2.x - v_end.x).powi(2) + (control2.y - v_end.y).powi(2)).sqrt();
+                                let norm_x = dir_x / len;
+                                let norm_y = dir_y / len;
+
+                                Point {
+                                x: v_end.x + norm_x * current_len,
+                                y: v_end.y + norm_y * current_len,
+                                role: PointRole::Control,
+                                continuity: cont,
+                                }
+                            }
                         },
                         Continuity::C1 => {
-                            let dx = v_end.x - next.x;
-                            let dy = v_end.y - next.y;
+                            let dx = (v_end.x - next.x)/3.0;
+                            let dy = (v_end.y - next.y)/3.0;
                             Point {
                                 x: v_end.x + dx,
                                 y: v_end.y + dy,

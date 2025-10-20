@@ -16,7 +16,6 @@ impl Selection {
         }
     }
 
-    //TODO: tutaj jest problem bo musi byc mozliwosc wyboru wierzcholka kontrolnego Beziera
     pub fn select_vertex(&mut self, polygon: &Polygon, mouse_pos: Point, radius: f32) -> Option<usize> {
         if let Some(idx) = polygon.vertices.iter().position(|v| v.distance(&mouse_pos) < radius) {
             self.selected_vertex = Some(idx);
