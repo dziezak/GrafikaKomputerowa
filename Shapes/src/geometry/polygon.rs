@@ -508,6 +508,48 @@ impl Polygon {
     }
 
 
+    // zwraca czy dana krawędź (index) jest Bezierem
+    fn is_bezier_edge(&self, edge_idx: usize) -> bool {
+        matches!(self.constraints.get(edge_idx).and_then(|c| c.as_ref()), Some(ConstraintType::Bezier { .. }))
+    }
+
+    // zwraca Option(control2) z poprzedniego segmentu (bez mut)
+    fn prev_control2(&self, start_idx: usize) -> Option<Point> {
+        let n = self.vertices.len();
+        if n == 0 { return None; }
+        let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
+        match self.constraints.get(prev_idx).and_then(|c| c.as_ref()) {
+            Some(ConstraintType::Bezier { control2, .. }) => Some(*control2),
+            _ => None,
+        }
+    }
+
+    // zwraca Option(control1) z następnego segmentu (bez mut)
+    fn next_control1(&self, end_idx: usize) -> Option<Point> {
+        let n = self.vertices.len();
+        if n == 0 { return None; }
+        let next_idx = (end_idx + 1) % n;
+        match self.constraints.get(next_idx).and_then(|c| c.as_ref()) {
+            Some(ConstraintType::Bezier { control1, .. }) => Some(*control1),
+            _ => None,
+        }
+    }
+
+    // sprawdza czy którąś z krawędzi incydentnych do wierzchołków start/end ma FixedLength
+    fn is_prev_fixed(&self, start_idx: usize) -> bool {
+        let n = self.vertices.len();
+        let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
+        matches!(self.constraints.get(prev_idx).and_then(|c| c.as_ref()), Some(ConstraintType::FixedLength(_)))
+    }
+
+    fn is_next_fixed(&self, end_idx: usize) -> bool {
+        let n = self.vertices.len();
+        let next_idx = (end_idx + 1) % n;
+        matches!(self.constraints.get(next_idx).and_then(|c| c.as_ref()), Some(ConstraintType::FixedLength(_)))
+    }
+
+
+
 
 
 

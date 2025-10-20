@@ -208,8 +208,7 @@ impl App for PolygonApp {
                     }
 
                     self.polygon.enforce_continuity_after_control_move(e_idx, if is_control1 { 1 } else { 2 });
-                    //self.polygon.apply_constraints();
-
+                    self.polygon.apply_constraints();
                 }
             }
 
