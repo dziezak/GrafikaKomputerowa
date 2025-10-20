@@ -423,92 +423,95 @@ impl Polygon {
     }
 
     ///BEZIER
-
-    pub fn enforce_bezier_control_move(&mut self, edge_idx: usize, is_control1: bool) {
-        // 1️⃣ Wyciągamy opcjonalnie constraint na ten segment
+    pub fn enforce_continuity_after_control_move(&mut self, constraint_index: usize, control_id: u8) {
         if let Some(ConstraintType::Bezier {
                         control1,
                         control2,
-                        g1_start,
-                        g1_end,
-                        c1_start,
-                        c1_end,
-                    }) = self.constraints.get(edge_idx).and_then(|c| c.as_ref())
+                        ..
+                    }) = &mut self.constraints[constraint_index]
         {
-            // 2️⃣ Tworzymy lokalną kopię punktów kontrolnych
-            let mut new_control1 = *control1;
-            let mut new_control2 = *control2;
+            let n = self.vertices.len();
+            let start_idx = constraint_index;
+            let end_idx = (constraint_index + 1) % n;
 
-            // Pobieramy wierzchołki segmentu
-            let start_vertex = self.vertices[edge_idx];
-            let end_vertex = self.vertices[(edge_idx + 1) % self.vertices.len()];
+            match control_id {
+                1 => {
+                    // Przesunięto control1 → modyfikujemy poprzedni wierzchołek (vertex[i - 1])
+                    let v_start = self.vertices[start_idx];
+                    let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
+                    let prev = self.vertices[prev_idx];
+                    let cont = v_start.continuity;
 
-            // 3️⃣ Modyfikacja w zależności który punkt kontrolny ruszamy
-            if is_control1 {
-                // Odbicie / G1 / C1 względem poprzedniego wierzchołka
-                let prev_idx = if edge_idx == 0 {
-                    self.vertices.len() - 1
-                } else {
-                    edge_idx - 1
-                };
-                let prev_vertex = self.vertices[prev_idx];
+                    match cont {
+                        Continuity::G1 => {
+                            // chcemy zachować długość poprzedniej krawędzi, tylko ustawić jej kierunek
+                            let dx = control1.x - v_start.x;
+                            let dy = control1.y - v_start.y;
+                            let norm = (dx * dx + dy * dy).sqrt().max(1e-6);
+                            let ux = dx / norm;
+                            let uy = dy / norm;
 
-                match start_vertex.continuity {
-                    Continuity::G1 => {
-                        new_control1.x = 2.0 * start_vertex.x - prev_vertex.x;
-                        new_control1.y = 2.0 * start_vertex.y - prev_vertex.y;
+                            // oryginalna długość krawędzi prev -> v_start
+                            let prev_len = prev.distance(&v_start).max(1e-6);
+
+                            // nowy poprzedni wierzchołek: v_start - unit * prev_len
+                            self.vertices[prev_idx].x = v_start.x - ux * prev_len;
+                            self.vertices[prev_idx].y = v_start.y - uy * prev_len;
+                        }
+                        Continuity::C1 => {
+                            let dx = control1.x - v_start.x;
+                            let dy = control1.y - v_start.y;
+                            // C1: skala 1:3 (kontrolka wpływa na położenie wierzchołka z mnożnikiem 3)
+                            self.vertices[prev_idx].x = v_start.x - dx * 3.0;
+                            self.vertices[prev_idx].y = v_start.y - dy * 3.0;
+                        }
+                        _ => {}
                     }
-                    Continuity::C1 => {
-                        let dx = start_vertex.x - prev_vertex.x;
-                        let dy = start_vertex.y - prev_vertex.y;
-                        new_control1.x = start_vertex.x + dx;
-                        new_control1.y = start_vertex.y + dy;
-                    }
-                    _ => {}
                 }
-            } else {
-                // Odbicie / G1 / C1 względem następnego wierzchołka
-                let next_idx = (edge_idx + 1) % self.vertices.len();
-                let next_vertex = self.vertices[next_idx];
 
-                match end_vertex.continuity {
-                    Continuity::G1 => {
-                        new_control2.x = 2.0 * end_vertex.x - next_vertex.x;
-                        new_control2.y = 2.0 * end_vertex.y - next_vertex.y;
+                2 => {
+                    // Przesunięto control2 → modyfikujemy następny wierzchołek (vertex[i + 2])
+                    let v_end = self.vertices[end_idx];
+                    let next_idx = (end_idx + 1) % n;
+                    let next = self.vertices[next_idx];
+                    let cont = v_end.continuity;
+
+                    match cont {
+                        Continuity::G1 => {
+                            // zachowujemy długość krawędzi v_end -> next, tylko zmieniamy kierunek
+                            let dx = control2.x - v_end.x;
+                            let dy = control2.y - v_end.y;
+                            let norm = (dx * dx + dy * dy).sqrt().max(1e-6);
+                            let ux = dx / norm;
+                            let uy = dy / norm;
+
+                            // oryginalna długość krawędzi v_end -> next
+                            let next_len = next.distance(&v_end).max(1e-6);
+
+                            // nowy next: v_end + unit * next_len
+                            self.vertices[next_idx].x = v_end.x - ux * next_len;
+                            self.vertices[next_idx].y = v_end.y - uy * next_len;
+                        }
+                        Continuity::C1 => {
+                            let dx = control2.x - v_end.x;
+                            let dy = control2.y - v_end.y;
+                            self.vertices[next_idx].x = v_end.x - dx * 3.0;
+                            self.vertices[next_idx].y = v_end.y - dy * 3.0;
+                        }
+                        _ => {}
                     }
-                    Continuity::C1 => {
-                        let dx = end_vertex.x - next_vertex.x;
-                        let dy = end_vertex.y - next_vertex.y;
-                        new_control2.x = end_vertex.x + dx;
-                        new_control2.y = end_vertex.y + dy;
-                    }
-                    _ => {}
                 }
-            }
 
-            // 4️⃣ Zapisujemy zmodyfikowane kontrolki z powrotem
-            if let Some(ConstraintType::Bezier {
-                            control1,
-                            control2,
-                            ..
-                        }) = self.constraints.get_mut(edge_idx).and_then(|c| c.as_mut())
-            {
-                *control1 = new_control1;
-                *control2 = new_control2;
+                _ => {}
             }
-
-            // 5️⃣ Wymuszenie pozostałych constraints
-            self.apply_constraints();
         }
     }
-    pub fn mirror_point(center: Point, target: Point) -> Point {
-        Point {
-            x: 2.0 * center.x - target.x,
-            y: 2.0 * center.y - target.y,
-            role: target.role,
-            continuity: target.continuity,
-        }
-    }
+
+
+
+
 
 
 }
+
+

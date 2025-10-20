@@ -118,8 +118,9 @@ impl App for PolygonApp {
                     if let Some(idx) = self.selection.selected_vertex {
                         let dx = pos.x - self.polygon.vertices[idx].x;
                         let dy = pos.y - self.polygon.vertices[idx].y;
-                        //self.polygon.move_vertex_or_control(self.selection.selected_vertex, self.selection.selected_control, dx, dy);
+                        ///TOTAJJ!!!!
                         self.polygon.move_vertex(self.selection.selected_vertex.unwrap(), dx, dy);
+                        //self.move_selected(dx, dy);
 
                         self.polygon.apply_constraints();
                     }
@@ -206,8 +207,9 @@ impl App for PolygonApp {
                         control2.y += delta.y;
                     }
 
-                    // Wywołanie funkcji, która dopasuje pozostałe punkty w oparciu o G1/C1
-                    //self.polygon.enforce_bezier_control_move(e_idx, is_control1);
+                    self.polygon.enforce_continuity_after_control_move(e_idx, if is_control1 { 1 } else { 2 });
+                    //self.polygon.apply_constraints();
+
                 }
             }
 
@@ -351,8 +353,12 @@ impl App for PolygonApp {
                                                 self.polygon.constraints[e_idx] = None;
                                             }
                                             _ => {
+                                                let n = self.polygon.vertices.len();
                                                 let start = self.polygon.vertices[e_idx];
                                                 let end = self.polygon.vertices[(e_idx + 1) % self.polygon.vertices.len()];
+                                                self.polygon.vertices[e_idx].continuity = Continuity::G1;
+                                                self.polygon.vertices[(e_idx+1)%n].continuity = Continuity::C1;
+
                                                 let control1 = Point {
                                                     x: start.x + (end.x - start.x) / 3.0,
                                                     y: start.y + (end.y - start.y) / 3.0,
@@ -368,8 +374,8 @@ impl App for PolygonApp {
                                                 self.polygon.constraints[e_idx] = Some(ConstraintType::Bezier {
                                                     control1,
                                                     control2,
-                                                    g1_start:false,
-                                                    g1_end:false,
+                                                    g1_start:true,
+                                                    g1_end:true,
                                                     c1_start: false,
                                                     c1_end: false,
                                                 });
@@ -464,3 +470,5 @@ impl App for PolygonApp {
         });
     }
 }
+
+
