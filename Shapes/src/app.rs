@@ -45,6 +45,40 @@ impl Default for PolygonApp {
             Point { x: 100.0, y: 200.0, role: PointRole::Vertex, continuity: Continuity::None },
         ]);
 
+        let mut polygon = Polygon::new(vec![
+            Point { x: 100.0, y: 100.0, role: PointRole::Vertex, continuity: Continuity::None },
+            Point { x: 300.0, y: 100.0, role: PointRole::Vertex, continuity: Continuity::G1 },
+            Point { x: 300.0, y: 250.0, role: PointRole::Vertex, continuity: Continuity::G1 },
+            Point { x: 100.0, y: 250.0, role: PointRole::Vertex, continuity: Continuity::None },
+        ]);
+
+        polygon.constraints = vec![
+            Some(ConstraintType::Horizontal),
+            Some(ConstraintType::Bezier {
+                control1: Point {
+                    x: 320.0,
+                    y: 150.0,
+                    role: PointRole::Control,
+                    continuity: Continuity::G1,
+                },
+                control2: Point {
+                    x: 280.0,
+                    y: 250.0,
+                    role: PointRole::Control,
+                    continuity: Continuity::G1,
+                },
+                g1_start: true,
+                g1_end: true,
+                c1_start: false,
+                c1_end: false,
+            }),
+            Some(ConstraintType::FixedLength(200.0)),
+            Some(ConstraintType::Vertical),
+        ];
+        polygon.apply_constraints();
+
+
+
         Self {
             polygon,
             selection: Selection::new(),
@@ -208,7 +242,7 @@ impl App for PolygonApp {
                     }
 
                     self.polygon.enforce_continuity_after_control_move(e_idx, if is_control1 { 1 } else { 2 });
-                    self.polygon.apply_constraints();
+                    //self.polygon.apply_constraints();
                 }
             }
 
@@ -232,11 +266,6 @@ impl App for PolygonApp {
                                     if ui.button("usun wierzcholek").clicked(){
                                         self.polygon.remove_vertex(v_idx);
                                         self.show_context_menu = false;
-                                    }
-                                    if ui.button("Ustaw caiglasc w wierzcholku").clicked(){
-                                        todo!();
-                                        self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
                                     }
                                     if ui.button("Ustaw G0").clicked() {
                                         if let Some(v_idx) = self.clicked_vertex {
