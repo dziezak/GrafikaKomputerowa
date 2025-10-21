@@ -4,7 +4,7 @@ use crate::geometry::polygon::{Polygon, ConstraintType};
 use eframe::egui;
 use eframe::epaint::{Color32, Stroke};
 use crate::geometry::point;
-use crate::geometry::point::Point;
+use crate::geometry::point::{Continuity, Point};
 
 pub struct MyPolygonDrawer;
 
@@ -226,6 +226,27 @@ impl IPolygonDrawer for MyPolygonDrawer {
 
     fn draw_dashed_polyline(&self, painter: &Painter, pts: &[Pos2], stroke: Stroke) {
         todo!()
+    }
+
+    fn draw_continuity_label(&self, painter: &Painter, point: &Point) {
+        use egui::Align2;
+
+        let label = match point.continuity {
+            Continuity::G1 => Some("G1"),
+            Continuity::C1 => Some("C1"),
+            _ => None,
+        };
+
+        if let Some(text) = label {
+            let pos = egui::pos2(point.x, point.y - 15.0);
+            painter.text(
+                pos,
+                Align2::CENTER_BOTTOM,
+                text,
+                egui::FontId::proportional(14.0),
+                egui::Color32::from_rgb(200, 255, 200),
+            );
+        }
     }
 }
 

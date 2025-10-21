@@ -166,6 +166,14 @@ impl App for PolygonApp {
                                 v.x += dx;
                                 v.y += dy;
                             }
+                            for constraint_opt in &mut self.polygon.constraints{
+                                if let Some(ConstraintType::Bezier{control1, control2, ..}) = constraint_opt{
+                                    control1.x += dx;
+                                    control1.y += dy;
+                                    control2.x += dx;
+                                    control2.y += dy;
+                                }
+                            }
                             self.last_mouse_pos = Some(pos);
                         }
                     }

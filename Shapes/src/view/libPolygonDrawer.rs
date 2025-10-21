@@ -6,7 +6,7 @@ use crate::geometry::polygon::{Polygon, ConstraintType};
 use eframe::egui;
 //use egui::accesskit::Point;
 use crate::view::IPolygonDrawer::IPolygonDrawer;
-use crate::geometry::point::Point;
+use crate::geometry::point::{Continuity, Point};
 
 pub struct PolygonDrawer;
 
@@ -114,7 +114,6 @@ impl IPolygonDrawer for PolygonDrawer {
 
             let mid = egui::pos2((start.x + end.x) / 2.0, (start.y + end.y) / 2.0);
 
-            //TODO czy to ok??
             if let Some(Some(constraint)) = polygon.constraints.get(i) {
                 let text = match constraint {
                     ConstraintType::Horizontal => "H".to_string(),
@@ -137,6 +136,7 @@ impl IPolygonDrawer for PolygonDrawer {
 
         for v in &polygon.vertices { //TODO można zmieniac kolor jak jesteś nad nim
             painter.circle_filled(egui::pos2(v.x, v.y), 5.0, egui::Color32::RED);
+            self.draw_continuity_label(painter, v);
         }
     }
 
@@ -321,6 +321,24 @@ impl IPolygonDrawer for PolygonDrawer {
         }
     }
 
+    fn draw_continuity_label(&self, painter: &Painter, point: &Point) {
+        use egui::Align2;
 
+        let label = match point.continuity {
+            Continuity::G1 => Some("G1"),
+            Continuity::C1 => Some("C1"),
+            _ => None,
+        };
 
+        if let Some(text) = label {
+            let pos = egui::pos2(point.x, point.y - 15.0);
+            painter.text(
+                pos,
+                Align2::CENTER_BOTTOM,
+                text,
+                egui::FontId::proportional(14.0),
+                egui::Color32::from_rgb(200, 255, 200),
+            );
+        }
+    }
 }

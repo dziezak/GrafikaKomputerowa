@@ -39,4 +39,5 @@ pub trait IPolygonDrawer {
         stroke: egui::Stroke,
     );
     fn draw_dashed_polyline(&self, painter: &egui::Painter, pts: &[egui::Pos2], stroke: egui::Stroke);
+    fn draw_continuity_label(&self, painter: &egui::Painter, point: &Point);
 }
