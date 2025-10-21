@@ -250,7 +250,6 @@ impl App for PolygonApp {
                     }
 
                     self.polygon.enforce_continuity_after_control_move(e_idx, if is_control1 { 1 } else { 2 });
-                    //self.polygon.apply_constraints();
                 }
             }
 
@@ -363,6 +362,7 @@ impl App for PolygonApp {
                                             g1_end: false,
                                         };
                                         self.polygon.constraints[e_idx] = Some(constraint);
+                                        self.polygon.apply_constraints();
                                     }
                                     if let Some(ConstraintType::Arc { ref mut g1_start, ref mut g1_end})=
                                         self.polygon.constraints[e_idx]
@@ -417,8 +417,8 @@ impl App for PolygonApp {
                                                 });
                                             }
                                         }
+                                        self.polygon.apply_constraints();
                                     }
-                                    self.polygon.apply_constraints();
                                 }
                             }
                         });

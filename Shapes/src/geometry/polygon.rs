@@ -457,6 +457,7 @@ impl Polygon {
                             // nowy poprzedni wierzchołek: v_start - unit * prev_len
                             self.vertices[prev_idx].x = v_start.x - ux * prev_len;
                             self.vertices[prev_idx].y = v_start.y - uy * prev_len;
+                            let constraint_opt = self.constraints.get(prev_idx).cloned();
                         }
                         Continuity::C1 => {
                             let dx = control1.x - v_start.x;
@@ -467,6 +468,7 @@ impl Polygon {
                         }
                         _ => {}
                     }
+
                 }
 
                 2 => {
@@ -500,6 +502,7 @@ impl Polygon {
                         }
                         _ => {}
                     }
+
                 }
 
                 _ => {}
@@ -508,45 +511,28 @@ impl Polygon {
     }
 
 
-    // zwraca czy dana krawędź (index) jest Bezierem
-    fn is_bezier_edge(&self, edge_idx: usize) -> bool {
-        matches!(self.constraints.get(edge_idx).and_then(|c| c.as_ref()), Some(ConstraintType::Bezier { .. }))
-    }
-
-    // zwraca Option(control2) z poprzedniego segmentu (bez mut)
-    fn prev_control2(&self, start_idx: usize) -> Option<Point> {
+    /// Wymusza wszystkie ograniczenia oprócz jednej wskazanej krawędzi.
+    /// Użyteczne np. przy przesuwaniu punktu kontrolnego, aby nie „cofnąć” jego pozycji.
+    pub fn apply_constraints_except(&mut self, exclude_edge: Option<usize>) {
         let n = self.vertices.len();
-        if n == 0 { return None; }
-        let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
-        match self.constraints.get(prev_idx).and_then(|c| c.as_ref()) {
-            Some(ConstraintType::Bezier { control2, .. }) => Some(*control2),
-            _ => None,
+        if n < 2 {
+            return;
+        }
+
+        for i in 0..n {
+            // Pomijamy krawędź, której nie chcemy teraz wymuszać
+            if Some(i) == exclude_edge {
+                continue;
+            }
+
+            if let Some(constraint) = self.get_constraint(i) {
+                let start_idx = i;
+                let end_idx = (i + 1) % n;
+                self.enforce_constraint(start_idx, end_idx, &constraint);
+            }
         }
     }
 
-    // zwraca Option(control1) z następnego segmentu (bez mut)
-    fn next_control1(&self, end_idx: usize) -> Option<Point> {
-        let n = self.vertices.len();
-        if n == 0 { return None; }
-        let next_idx = (end_idx + 1) % n;
-        match self.constraints.get(next_idx).and_then(|c| c.as_ref()) {
-            Some(ConstraintType::Bezier { control1, .. }) => Some(*control1),
-            _ => None,
-        }
-    }
-
-    // sprawdza czy którąś z krawędzi incydentnych do wierzchołków start/end ma FixedLength
-    fn is_prev_fixed(&self, start_idx: usize) -> bool {
-        let n = self.vertices.len();
-        let prev_idx = if start_idx == 0 { n - 1 } else { start_idx - 1 };
-        matches!(self.constraints.get(prev_idx).and_then(|c| c.as_ref()), Some(ConstraintType::FixedLength(_)))
-    }
-
-    fn is_next_fixed(&self, end_idx: usize) -> bool {
-        let n = self.vertices.len();
-        let next_idx = (end_idx + 1) % n;
-        matches!(self.constraints.get(next_idx).and_then(|c| c.as_ref()), Some(ConstraintType::FixedLength(_)))
-    }
 
 
 
