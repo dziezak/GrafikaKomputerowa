@@ -474,11 +474,34 @@ impl App for PolygonApp {
                     .anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0))
                     .show(ctx, |ui| {
                         ui.label("Pomoc");
-                        ui.hyperlink_to("Kliknij po więcej pomocy",
-                                        "https://www.youtube.com/watch?v=xvFZjo5PgG0");
+                        ui.hyperlink_to(
+                            "Kliknij po więcej pomocy",
+                            "https://www.youtube.com/watch?v=xvFZjo5PgG0"
+                        );
 
                         ui.add_space(10.0);
-                        ui.label("Program umożliwia tworzenie i edycję wielokątów z ograniczeniami geometrycznymi (H, V, 45°, długość). Kliknij wierzchołek, aby go przesunąć, lub w krawędź, aby dodać nowy punkt. Kliknięcie prawym przyciskiem myszy otwiera menu z opcjami (dodaj, usuń, nadaj ograniczenie itp.). Dwie sąsiednie krawędzie nie mogą być jednocześnie poziome lub pionowe. Krawędzie mogą być także krzywymi Beziera trzeciego stopnia z punktami kontrolnymi. W wierzchołkach można ustawiać klasę ciągłości (G0, G1, C1) między segmentami. Cały wielokąt można przesuwać przeciągając tło. Po każdej zmianie program automatycznie wymusza zgodność z ograniczeniami.");
+                        ui.separator();
+                        ui.add_space(10.0);
+
+                        // 👇 przewijany obszar na treść
+                        egui::ScrollArea::vertical()
+                            .auto_shrink([false; 2])
+                            .max_height(300.0) // możesz zmienić wysokość np. na 400
+                            .show(ui, |ui| {
+                                ui.label("Program umożliwia tworzenie i edycję wielokątów z ograniczeniami geometrycznymi (H, V, 45°, długość). Kliknij wierzchołek, aby go przesunąć, lub w krawędź, aby dodać nowy punkt. Kliknięcie prawym przyciskiem myszy otwiera menu z opcjami (dodaj, usuń, nadaj ograniczenie itp.). Dwie sąsiednie krawędzie nie mogą być jednocześnie poziome lub pionowe. Krawędzie mogą być także krzywymi Beziera trzeciego stopnia z punktami kontrolnymi. W wierzchołkach można ustawiać klasę ciągłości (G0, G1, C1) między segmentami. Cały wielokąt można przesuwać przeciągając tło. Po każdej zmianie program automatycznie wymusza zgodność z ograniczeniami.");
+
+                                ui.add_space(10.0);
+                                ui.label("Klawiszologia:");
+                                ui.label(" • Lewy przycisk myszy – zaznacz lub przeciągnij wierzchołek");
+                                ui.label(" • Prawy przycisk myszy na wiezcholku – otwiera menu kontekstowe (dodaj, usuń, ograniczenia)");
+                                ui.label(" • Przeciągnięcie tła – przesuwa cały wielokąt");
+                                ui.label(" • Prawy przycisk myszy na krawedzi otwiera menu kontekstowe ( ograniczenie poziome/pionowe");
+
+                                ui.add_space(10.0);
+                                ui.label("Algorytm relacji:");
+                                ui.label("Program po każdej zmianie wymusza zgodność z zadanymi ograniczeniami. Relacje geometryczne są stosowane w kolejności ich dodania. Ograniczenia długości są traktowane jako nadrzędne wobec kierunkowych (H, V, 45°). Przy przesuwaniu wierzchołków program automatycznie przelicza położenia innych punktów, aby zachować zadane relacje. W przypadku krzywych Beziera, wierzchołki kontrolne są przesuwane zgodnie z wybraną klasą ciągłości (C0, C1, G1).");
+                            });
+
                         ui.add_space(10.0);
                         ui.separator();
                         ui.add_space(5.0);
@@ -490,6 +513,8 @@ impl App for PolygonApp {
                         });
                     });
             }
+
+
         }
     );
 
