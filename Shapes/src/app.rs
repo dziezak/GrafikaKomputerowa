@@ -34,6 +34,7 @@ pub struct PolygonApp {
     show_warning_popup: bool,
     warning_text: String,
     show_help_window: bool,
+    pub active_polygon: i32,
 }
 
 impl Default for PolygonApp {
@@ -81,6 +82,7 @@ impl Default for PolygonApp {
 
         Self {
             polygons: vec![polygon],
+            active_polygon: 0,
             selection: Selection::new(),
             drawer: Box::new(PolygonDrawer::new()),
             draw_mode: DrawMode::Library,
@@ -93,10 +95,8 @@ impl Default for PolygonApp {
             length_edge_idx: None,
             is_dragging_polygon: false,
             last_mouse_pos: None,
-
             show_warning_popup: false,
             warning_text: String::new(),
-
             show_help_window: false,
         }
 
@@ -145,9 +145,25 @@ impl PolygonApp{
         polygon.apply_constraints();
 
         self.polygons.push(polygon);
-
-
+        self.active_polygon = (self.polygons.len() - 1) as i32;
     }
+
+    pub fn remove_active_polygon(&mut self) {
+        if self.polygons.len() > 1 {
+            self.polygons.remove(self.active_polygon as usize);
+            self.active_polygon = (self.polygons.len() - 1) as i32;
+        }
+    }
+
+    pub fn active_polygon_mut(&mut self) -> &mut Polygon {
+        &mut self.polygons[self.active_polygon as usize]
+    }
+
+    pub fn active_polygon(&self) -> &Polygon {
+        &self.polygons[self.active_polygon as usize]
+    }
+
+
 }
 impl App for PolygonApp {
 
@@ -156,8 +172,7 @@ impl App for PolygonApp {
 
     fn update(&mut self,ctx: &egui::Context, _frame: &mut eframe::Frame) {
 
-        let mut i = 0;
-        let mut n = self.polygons.len();
+        let mut i = self.active_polygon as usize;
 
         egui::TopBottomPanel::top("topbar").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -178,7 +193,7 @@ impl App for PolygonApp {
                     self.newPolygon();
                 }
                 if ui.button("-").clicked(){
-                    todo!();
+                    self.remove_active_polygon();
                 }
             });
         });
@@ -198,8 +213,17 @@ impl App for PolygonApp {
 
             // Obsługa kliknięcia/podciągnięcia wierzchołka
             if response.dragged_by(egui::PointerButton::Primary) {
+
                 if let Some(pos) = response.interact_pointer_pos() {
                     let mouse_point = Point { x: pos.x, y: pos.y, role: Vertex, continuity: Continuity::None };
+
+                    ///HERE CHANGE
+                    for (i, polygon) in self.polygons.iter().enumerate() {
+                        if polygon.contains_point(mouse_point) {
+                            self.active_polygon = i as i32;
+                        }
+                    }
+
 
                     if self.selection.selected_vertex.is_none() && !self.is_dragging_polygon {
                         if self.selection.select_vertex(&self.polygons[i], mouse_point, 15.0).is_none() {
@@ -255,7 +279,12 @@ impl App for PolygonApp {
                     }
                 }
 
-            self.drawer.draw(&painter, &mut self.polygons[i]);
+            for polygon in self.polygons.iter_mut(){
+                self.drawer.draw(&painter, polygon);
+
+            }
+                //self.drawer.draw(&painter, &mut self.polygons[i]);
+
 
 
             let mut moved_controls: Vec<(usize, bool, egui::Vec2)> = Vec::new();

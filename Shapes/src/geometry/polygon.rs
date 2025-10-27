@@ -533,7 +533,34 @@ impl Polygon {
         }
     }
 
+    pub fn contains_point(&self, p: Point) -> bool {
+        let n = self.vertices.len();
+        if n < 3 {
+            return false;
+        }
 
+        let mut inside = false;
+        let mut j = n - 1;
+
+        for i in 0..n {
+            let v_i = self.vertices[i];
+            let v_j = self.vertices[j];
+
+            let intersects_vertically = (v_i.y > p.y) != (v_j.y > p.y);
+
+            if intersects_vertically {
+                let x_intersect = (v_j.x - v_i.x) * (p.y - v_i.y) / (v_j.y - v_i.y) + v_i.x;
+
+                if p.x < x_intersect {
+                    inside = !inside;
+                }
+            }
+
+            j = i;
+        }
+
+        inside
+    }
 
 
 
