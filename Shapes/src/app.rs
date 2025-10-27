@@ -149,9 +149,21 @@ impl PolygonApp{
     }
 
     pub fn remove_active_polygon(&mut self) {
-        if self.polygons.len() > 1 {
-            self.polygons.remove(self.active_polygon as usize);
-            self.active_polygon = (self.polygons.len() - 1) as i32;
+        if self.polygons.is_empty() {
+            self.active_polygon = -1;
+            return;
+        }
+
+        let current_index_i32 = self.active_polygon.clamp(0, (self.polygons.len() as i32) - 1);
+        let current_index = current_index_i32 as usize;
+
+        self.polygons.remove(current_index);
+
+        if self.polygons.is_empty() {
+            self.active_polygon = -1;
+        } else {
+            let new_index = current_index.saturating_sub(1);
+            self.active_polygon = new_index.min(1) as i32;
         }
     }
 
