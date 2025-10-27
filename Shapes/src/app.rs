@@ -17,7 +17,7 @@ pub enum DrawMode {
 
 #[derive()]
 pub struct PolygonApp {
-    polygon: Polygon,
+    polygons: Vec<Polygon>,
     selection: Selection,
     drawer: Box<dyn IPolygonDrawer>,
     draw_mode: DrawMode,
@@ -80,7 +80,7 @@ impl Default for PolygonApp {
 
 
         Self {
-            polygon,
+            polygons: vec![polygon],
             selection: Selection::new(),
             drawer: Box::new(PolygonDrawer::new()),
             draw_mode: DrawMode::Library,
@@ -99,12 +99,65 @@ impl Default for PolygonApp {
 
             show_help_window: false,
         }
+
     }
 }
 
+impl PolygonApp{
+    fn newPolygon(&mut self) {
+
+
+        let mut shift:f32 = 0.0;
+        if self.polygons.len() > 0 {
+            shift = (self.polygons.len() as f32 -1.0) * 100.0;
+        }
+
+        let mut polygon = Polygon::new(vec![
+            Point { x: 100.0 + shift, y: 100.0 + shift, role: PointRole::Vertex, continuity: Continuity::None },
+            Point { x: 300.0 + shift, y: 100.0 + shift, role: PointRole::Vertex, continuity: Continuity::G1 },
+            Point { x: 300.0 + shift, y: 250.0 + shift, role: PointRole::Vertex, continuity: Continuity::G1 },
+            Point { x: 100.0 + shift, y: 250.0 + shift, role: PointRole::Vertex, continuity: Continuity::None },
+        ]);
+
+        polygon.constraints = vec![
+            Some(ConstraintType::Horizontal),
+            Some(ConstraintType::Bezier {
+                control1: Point {
+                    x: 320.0,
+                    y: 150.0,
+                    role: PointRole::Control,
+                    continuity: Continuity::G1,
+                },
+                control2: Point {
+                    x: 280.0,
+                    y: 250.0,
+                    role: PointRole::Control,
+                    continuity: Continuity::G1,
+                },
+                g1_start: true,
+                g1_end: true,
+                c1_start: false,
+                c1_end: false,
+            }),
+            Some(ConstraintType::FixedLength(200.0)),
+            Some(ConstraintType::Vertical),
+        ];
+        polygon.apply_constraints();
+
+        self.polygons.push(polygon);
+
+
+    }
+}
 impl App for PolygonApp {
 
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+
+
+    fn update(&mut self,ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        let mut i = 0;
+        let mut n = self.polygons.len();
 
         egui::TopBottomPanel::top("topbar").show(ctx, |ui| {
             ui.horizontal(|ui| {
@@ -120,6 +173,12 @@ impl App for PolygonApp {
                 ui.separator();
                 if ui.button("Pomoc").clicked(){
                     self.show_help_window = true;
+                }
+                if ui.button("+").clicked(){
+                    self.newPolygon();
+                }
+                if ui.button("-").clicked(){
+                    todo!();
                 }
             });
         });
@@ -143,30 +202,28 @@ impl App for PolygonApp {
                     let mouse_point = Point { x: pos.x, y: pos.y, role: Vertex, continuity: Continuity::None };
 
                     if self.selection.selected_vertex.is_none() && !self.is_dragging_polygon {
-                        if self.selection.select_vertex(&self.polygon, mouse_point, 15.0).is_none() {
+                        if self.selection.select_vertex(&self.polygons[i], mouse_point, 15.0).is_none() {
                             self.is_dragging_polygon = true;
                             self.last_mouse_pos = Some(pos);
                         }
                     }
 
                     if let Some(idx) = self.selection.selected_vertex {
-                        let dx = pos.x - self.polygon.vertices[idx].x;
-                        let dy = pos.y - self.polygon.vertices[idx].y;
-                        ///TOTAJJ!!!!
-                        self.polygon.move_vertex(self.selection.selected_vertex.unwrap(), dx, dy);
-                        //self.move_selected(dx, dy);
+                        let dx = pos.x - self.polygons[i].vertices[idx].x;
+                        let dy = pos.y - self.polygons[i].vertices[idx].y;
+                        self.polygons[i].move_vertex(self.selection.selected_vertex.unwrap(), dx, dy);
 
-                        self.polygon.apply_constraints();
+                        self.polygons[i].apply_constraints();
                     }
                     else if self.is_dragging_polygon {
                         if let Some(last_pos) = self.last_mouse_pos {
                             let dx = pos.x - last_pos.x;
                             let dy = pos.y - last_pos.y;
-                            for v in &mut self.polygon.vertices {
+                            for v in &mut self.polygons[i].vertices {
                                 v.x += dx;
                                 v.y += dy;
                             }
-                            for constraint_opt in &mut self.polygon.constraints{
+                            for constraint_opt in &mut self.polygons[i].constraints{
                                 if let Some(ConstraintType::Bezier{control1, control2, ..}) = constraint_opt{
                                     control1.x += dx;
                                     control1.y += dy;
@@ -190,21 +247,20 @@ impl App for PolygonApp {
                     if let Some(pos) = response.interact_pointer_pos() {
                         let mouse_point = Point { x: pos.x, y: pos.y, role: Vertex, continuity: Continuity::None };
 
-                        self.clicked_vertex = self.selection.select_vertex(&self.polygon, mouse_point, 10.0);
-                        self.clicked_edge = self.selection.select_edge(&self.polygon, &mouse_point, 10.0);
+                        self.clicked_vertex = self.selection.select_vertex(&self.polygons[i], mouse_point, 10.0);
+                        self.clicked_edge = self.selection.select_edge(&self.polygons[i], &mouse_point, 10.0);
                         self.context_pos = pos;
                         self.show_context_menu = true;
                         self.show_constraint_submenu = false;
                     }
                 }
 
-            self.drawer.draw(&painter, &mut self.polygon);
+            self.drawer.draw(&painter, &mut self.polygons[i]);
 
 
-            // 1️⃣ Krok: Zbieranie ruchów uchwytów
             let mut moved_controls: Vec<(usize, bool, egui::Vec2)> = Vec::new();
 
-            for (e_idx, constraint_opt) in self.polygon.constraints.iter().enumerate() {
+            for (e_idx, constraint_opt) in self.polygons[i].constraints.iter().enumerate() {
                 if let Some(ConstraintType::Bezier { control1, control2, .. }) = constraint_opt {
                     // Pozycje kontrolek
                     let c1_pos = egui::pos2(control1.x, control1.y);
@@ -236,10 +292,9 @@ impl App for PolygonApp {
                 }
             }
 
-            // 2️⃣ Krok: Zastosowanie ruchów i wymuszenie ciągłości
             for (e_idx, is_control1, delta) in moved_controls {
                 if let Some(ConstraintType::Bezier { control1, control2, .. }) =
-                    self.polygon.constraints.get_mut(e_idx).and_then(|c| c.as_mut())
+                    self.polygons[i].constraints.get_mut(e_idx).and_then(|c| c.as_mut())
                 {
                     if is_control1 {
                         control1.x += delta.x;
@@ -249,11 +304,10 @@ impl App for PolygonApp {
                         control2.y += delta.y;
                     }
 
-                    self.polygon.enforce_continuity_after_control_move(e_idx, if is_control1 { 1 } else { 2 });
+                    self.polygons[i].enforce_continuity_after_control_move(e_idx, if is_control1 { 1 } else { 2 });
                 }
             }
 
-            // 3️⃣ Na końcu odświeżamy canvas
             ctx.request_repaint();
 
 
@@ -271,49 +325,49 @@ impl App for PolygonApp {
 
                                 if let Some(v_idx) = self.clicked_vertex {
                                     if ui.button("usun wierzcholek").clicked(){
-                                        self.polygon.remove_vertex(v_idx);
+                                        self.polygons[i].remove_vertex(v_idx);
                                         self.show_context_menu = false;
                                     }
                                     if ui.button("Ustaw G0").clicked() {
                                         if let Some(v_idx) = self.clicked_vertex {
-                                            self.polygon.vertices[v_idx].continuity = Continuity::G0;
-                                            self.polygon.apply_constraints();
+                                            self.polygons[i].vertices[v_idx].continuity = Continuity::G0;
+                                            self.polygons[i].apply_constraints();
                                         }
                                     }
                                     if ui.button("Ustaw C1").clicked() {
                                         if let Some(v_idx) = self.clicked_vertex {
-                                            self.polygon.vertices[v_idx].continuity = Continuity::C1;
-                                            self.polygon.apply_constraints();
+                                            self.polygons[i].vertices[v_idx].continuity = Continuity::C1;
+                                            self.polygons[i].apply_constraints();
                                         }
                                     }
                                     if ui.button("Ustaw G1").clicked() {
                                         if let Some(v_idx) = self.clicked_vertex {
-                                            self.polygon.vertices[v_idx].continuity = Continuity::G1;
-                                            self.polygon.apply_constraints();
+                                            self.polygons[i].vertices[v_idx].continuity = Continuity::G1;
+                                            self.polygons[i].apply_constraints();
                                         }
                                     }
                                 }else if let Some(e_idx) = self.clicked_edge {
                                     if ui.button("dodaj wierzcholek").clicked(){
-                                        self.polygon.add_vertex_mid_edge(e_idx, e_idx+1);
+                                        self.polygons[i].add_vertex_mid_edge(e_idx, e_idx+1);
                                         self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                     }
                                     if ui.button("dodaj ograniczenie").clicked(){
                                         self.show_constraint_submenu = !self.show_constraint_submenu;
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                         //self.show_context_menu = false;
                                     }
                                     if ui.button("usun ograniczenie").clicked(){
-                                        if e_idx < self.polygon.constraints.len(){
-                                            self.polygon.constraints[e_idx] = None;
+                                        if e_idx < self.polygons[i].constraints.len(){
+                                            self.polygons[i].constraints[e_idx] = None;
                                         }
                                         self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                     }
                                     if ui.button("uzyj antyaliasingu").clicked(){
                                         //todo!();
                                         eprintln!("egui robi to automatycznie!");
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                         self.show_context_menu = false;
                                     }
                                 }
@@ -328,9 +382,9 @@ impl App for PolygonApp {
                                 if let Some(e_idx) = self.clicked_edge {
                                     if ui.button("Pozioma (H)").clicked(){
                                         let constraint = ConstraintType::Horizontal;
-                                        if self.polygon.is_constraint_legal(e_idx, &constraint) {
-                                            self.polygon.constraints[e_idx] = Some(ConstraintType::Horizontal);
-                                            self.polygon.apply_constraints();
+                                        if self.polygons[i].is_constraint_legal(e_idx, &constraint) {
+                                            self.polygons[i].constraints[e_idx] = Some(ConstraintType::Horizontal);
+                                            self.polygons[i].apply_constraints();
                                         }else{
                                             self.warning_text = "Nie można ustawić: sasiednia krawedz jest juz pozioma".to_string();
                                             self.show_warning_popup = true;
@@ -338,34 +392,34 @@ impl App for PolygonApp {
                                         self.show_context_menu = false;
                                     }
                                     if ui.button("Skosna (D)").clicked(){
-                                        self.polygon.constraints[e_idx] = Some(ConstraintType::Diagonal45);
+                                        self.polygons[i].constraints[e_idx] = Some(ConstraintType::Diagonal45);
                                         self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                     }
                                     if ui.button("Dlugosc stala").clicked(){
-                                        let start = &self.polygon.vertices[e_idx];
-                                        let end = &self.polygon.vertices[(e_idx+1) % self.polygon.vertices.len()];
+                                        let start = &self.polygons[i].vertices[e_idx];
+                                        let end = &self.polygons[i].vertices[(e_idx+1) % self.polygons[i].vertices.len()];
                                         let dx = end.x - start.x;
                                         let dy = end.y - start.y;
                                         let length = (dx * dx + dy * dy).sqrt();
-                                        self.polygon.constraints[e_idx] = Some(ConstraintType::FixedLength(length as f64)); // tutaj mega jest ten jezyk!
+                                        self.polygons[i].constraints[e_idx] = Some(ConstraintType::FixedLength(length as f64)); // tutaj mega jest ten jezyk!
 
                                         self.length_input = Some(length);//okienko
                                         self.length_edge_idx = Some(e_idx); //index do okienka
 
                                         self.show_context_menu = false;
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                     }
                                     if ui.button("Łuk").clicked(){
                                         let constraint = ConstraintType::Arc{
                                             g1_start: false,
                                             g1_end: false,
                                         };
-                                        self.polygon.constraints[e_idx] = Some(constraint);
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].constraints[e_idx] = Some(constraint);
+                                        self.polygons[i].apply_constraints();
                                     }
                                     if let Some(ConstraintType::Arc { ref mut g1_start, ref mut g1_end})=
-                                        self.polygon.constraints[e_idx]
+                                        self.polygons[i].constraints[e_idx]
                                     {
                                         ui.separator();
                                         ui.label("Ustaw ciaglosc luku:");
@@ -384,16 +438,16 @@ impl App for PolygonApp {
                                     }
 
                                     if ui.button("Przełącz Bezier").clicked() {
-                                        match &mut self.polygon.constraints[e_idx] {
+                                        match &mut self.polygons[i].constraints[e_idx] {
                                             Some(ConstraintType::Bezier { .. }) => {
-                                                self.polygon.constraints[e_idx] = None;
+                                                self.polygons[i].constraints[e_idx] = None;
                                             }
                                             _ => {
-                                                let n = self.polygon.vertices.len();
-                                                let start = self.polygon.vertices[e_idx];
-                                                let end = self.polygon.vertices[(e_idx + 1) % self.polygon.vertices.len()];
-                                                self.polygon.vertices[e_idx].continuity = Continuity::G1;
-                                                self.polygon.vertices[(e_idx+1)%n].continuity = Continuity::C1;
+                                                let n = self.polygons[i].vertices.len();
+                                                let start = self.polygons[i].vertices[e_idx];
+                                                let end = self.polygons[i].vertices[(e_idx + 1) % self.polygons[i].vertices.len()];
+                                                self.polygons[i].vertices[e_idx].continuity = Continuity::G1;
+                                                self.polygons[i].vertices[(e_idx+1)%n].continuity = Continuity::C1;
 
                                                 let control1 = Point {
                                                     x: start.x + (end.x - start.x) / 3.0,
@@ -407,7 +461,7 @@ impl App for PolygonApp {
                                                     role: Vertex,
                                                     continuity: Continuity::None,
                                                 };
-                                                self.polygon.constraints[e_idx] = Some(ConstraintType::Bezier {
+                                                self.polygons[i].constraints[e_idx] = Some(ConstraintType::Bezier {
                                                     control1,
                                                     control2,
                                                     g1_start:true,
@@ -417,8 +471,64 @@ impl App for PolygonApp {
                                                 });
                                             }
                                         }
-                                        self.polygon.apply_constraints();
+                                        self.polygons[i].apply_constraints();
                                     }
+
+                                    if ui.button("Przełącz BezierSharp").clicked() {
+                                        match &mut self.polygons[i].constraints[e_idx] {
+                                            Some(ConstraintType::Bezier { .. }) => {
+                                                self.polygons[i].constraints[e_idx] = None;
+                                            }
+                                            _ => {
+                                                let n = self.polygons[i].vertices.len();
+                                                let start = self.polygons[i].vertices[e_idx];
+                                                let end = self.polygons[i].vertices[(e_idx + 1) % n];
+
+                                                self.polygons[i].vertices[e_idx].continuity = Continuity::G0;
+                                                self.polygons[i].vertices[(e_idx + 1) % n].continuity = Continuity::G0;
+
+                                                let dx = end.x - start.x;
+                                                let dy = end.y - start.y;
+
+                                                let len = (dx * dx + dy * dy).sqrt();
+                                                if len == 0.0 {
+                                                    return;
+                                                }
+
+                                                let nx = -dy / len;
+                                                let ny = dx / len;
+
+                                                let sharpness = 0.2 * len;
+
+                                                let control2 = Point {
+                                                    x: start.x - nx * sharpness,
+                                                    y: start.y - ny * sharpness,
+                                                    role: Vertex,
+                                                    continuity: Continuity::None,
+                                                };
+
+                                                let control1 = Point {
+                                                    x: end.x - nx * sharpness,
+                                                    y: end.y - ny * sharpness,
+                                                    role: Vertex,
+                                                    continuity: Continuity::None,
+                                                };
+
+                                                self.polygons[i].constraints[e_idx] = Some(ConstraintType::Bezier {
+                                                    control1,
+                                                    control2,
+                                                    g1_start: true,
+                                                    g1_end: true,
+                                                    c1_start: false,
+                                                    c1_end: false,
+                                                });
+                                            }
+                                        }
+                                        self.polygons[i].apply_constraints();
+                                    }
+
+
+
                                 }
                             }
                         });
@@ -439,11 +549,11 @@ impl App for PolygonApp {
                         }
 
                         if ui.button("Zastosuj").clicked(){
-                            self.polygon.constraints[edge_idx] = Some(ConstraintType::FixedLength((self.length_input.unwrap()) as f64));
+                            self.polygons[i].constraints[edge_idx] = Some(ConstraintType::FixedLength((self.length_input.unwrap()) as f64));
                             self.length_input = None;
                             self.length_edge_idx = None;
 
-                            self.polygon.apply_constraints();
+                            self.polygons[i].apply_constraints();
                         }
 
                         if ui.button("Anuluj").clicked(){
@@ -522,14 +632,19 @@ impl App for PolygonApp {
         egui::SidePanel::right("sidebar").show(ctx, |ui| {
             ui.heading("Wybrany wierzchołek");
             if let Some(idx) = self.selection.selected_vertex {
-                let v = &self.polygon.vertices[idx];
+                let v = &self.polygons[i].vertices[idx];
                 ui.label(format!("Index: {}", idx));
                 ui.label(format!("Pozycja: ({:.1}, {:.1})", v.x, v.y));
             } else {
                 ui.label("Brak wybranego wierzchołka");
             }
         });
+
+
+
     }
+
 }
+
 
 
