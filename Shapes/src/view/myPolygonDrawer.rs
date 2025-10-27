@@ -5,6 +5,7 @@ use eframe::egui;
 use eframe::epaint::{Color32, Stroke};
 use crate::geometry::point;
 use crate::geometry::point::{Continuity, Point};
+use crate::view::PolygonDrawer;
 
 pub struct MyPolygonDrawer;
 
@@ -22,7 +23,6 @@ impl MyPolygonDrawer {
         );
     }
 
-    /// Implementacja algorytmu Bresenhama TODO: czy już dziła???
     fn bresenham_line(
         painter: &egui::Painter,
         start: (i32, i32),
@@ -71,23 +71,106 @@ impl IPolygonDrawer for MyPolygonDrawer {
             let start = &polygon.vertices[i];
             let end = &polygon.vertices[(i + 1) % n]; // wrap-around
 
-            Self::bresenham_line(
-                painter,
-                (start.x as i32, start.y as i32),
-                (end.x as i32, end.y as i32),
-                egui::Color32::WHITE,
-            );
+            match polygon.constraints[i] {
+
+                Some(ConstraintType::Arc {g1_start, g1_end}) => {
+
+                    let prev = if i == 0 { None } else { Some(polygon.vertices[i - 1]) };
+                    let next = if i + 1 < n - 1 { Some(polygon.vertices[i + 2]) } else { None };
+
+                    let (center, radius) = PolygonDrawer::compute_arc_geometry(
+                        *start,
+                        *end,
+                        prev,
+                        next,
+                        g1_start,
+                        g1_end,
+                    );
+
+
+                    //if(g1_start || g1_end) { eprintln!("g1_start != g1_end");}
+
+                    let start_angle = (*start - center).y.atan2((*start - center).x);
+                    let end_angle = (*end - center).y.atan2((*end - center).x);
+                    let mut arc_angle = end_angle - start_angle;
+                    if arc_angle < 0.0 {
+                        arc_angle = arc_angle * (-1.0);
+                    }
+                    self.draw_arc_between_points(
+                        painter,
+                        Pos2::new(start.x, start.y),
+                        Pos2::new(end.x, end.y),
+                        arc_angle,
+                        Color32::WHITE,
+                        1.0,
+                    );
+                }
+
+                Some(ConstraintType::Bezier {control1, control2, g1_start, g1_end, c1_start, c1_end }) => {
+                    self.draw_dashed_polyline(
+                        painter,
+                        &[
+                            egui::pos2(start.x, start.y),
+                            egui::pos2(control1.x, control1.y),
+                            egui::pos2(control2.x, control2.y),
+                            egui::pos2(end.x, end.y),
+                        ],
+                        egui::Stroke::new(1.0, egui::Color32::WHITE),
+                    );
+                    self.draw_cubic_bezier(
+                        painter,
+                        *start,
+                        control1,
+                        control2,
+                        *end,
+                        egui::Stroke::new(1.0, egui::Color32::WHITE),
+                    );
+                    painter.circle_filled(egui::pos2(control1.x, control1.y), 4.0, egui::Color32::GRAY);
+                    painter.circle_filled(egui::pos2(control2.x, control2.y), 4.0, egui::Color32::GRAY);
+
+                    if g1_start {
+                        painter.line_segment(
+                            [egui::pos2(start.x, start.y), egui::pos2(control1.x, control1.y)],
+                            egui::Stroke::new(1.0, egui::Color32::LIGHT_BLUE),
+                        );
+                    }
+
+                    if g1_end {
+                        painter.line_segment(
+                            [egui::pos2(end.x, end.y), egui::pos2(control2.x, control2.y)],
+                            egui::Stroke::new(1.0, egui::Color32::LIGHT_BLUE),
+                        );
+                    }
+
+                }
+
+                _ => {
+                    let start_i32 = (start.x as i32, start.y as i32);
+                    let end_i32 = (end.x as i32, end.y as i32);
+
+                    Self::bresenham_line(
+                        painter,
+                        start_i32,
+                        end_i32,
+                        egui::Color32::WHITE,
+                    );
+                }
+
+            }
+
+
 
             let mid = egui::pos2((start.x + end.x) / 2.0, (start.y + end.y) / 2.0);
 
-            if let Some(constraint) = polygon.constraints.get(i).copied().flatten() {
+            if let Some(Some(constraint)) = polygon.constraints.get(i) {
                 let text = match constraint {
                     ConstraintType::Horizontal => "H".to_string(),
                     ConstraintType::Vertical => "V".to_string(),
                     ConstraintType::Diagonal45 => "D".to_string(),
                     ConstraintType::Arc { g1_start: _, g1_end: _ } => "A".to_string(),
+                    ConstraintType::Bezier { .. } => "B".to_string(),
                     ConstraintType::FixedLength(len) => format!("{:.1}", len),
-                    _ => "".to_string(),
+                    _=> "".to_string(),
                 };
                 painter.text(
                     mid,
@@ -99,8 +182,9 @@ impl IPolygonDrawer for MyPolygonDrawer {
             }
         }
 
-        for v in &polygon.vertices {
+        for v in &polygon.vertices { //TODO można zmieniac kolor jak jesteś nad nim
             painter.circle_filled(egui::pos2(v.x, v.y), 5.0, egui::Color32::RED);
+            self.draw_continuity_label(painter, v);
         }
     }
 
@@ -154,37 +238,29 @@ impl IPolygonDrawer for MyPolygonDrawer {
         g1_start: bool,
         g1_end: bool,
     ) -> (Point, f32) {
-        // Wektor cięciwy
         let chord = end - start;
         let chord_len = chord.length();
         let mid = (start + end) * 0.5;
 
-        // --- klasyczny G0 ---
         if !g1_start && !g1_end {
             let normal = Point::new(-chord.y, chord.x).normalized();
             let center = mid + normal * (chord_len / 2.0);
             return (center, (center - start).length());
         }
 
-        // --- G1 continuity on start ---
         if g1_start {
             if let Some(ts) = tangent_start {
                 let tangent_dir = (start - ts).normalized();
                 let normal_start = Point::new(-tangent_dir.y, tangent_dir.x);
 
-                // linia normalna do stycznej w start: center = start + normal_start * t
-                // linia prostopadła do cięciwy w połowie: center = mid + normal_chord * s
-                // rozwiązujemy dla t i s:
                 let normal_chord = Point::new(-chord.y, chord.x).normalized();
 
                 let denom = normal_start.x * normal_chord.y - normal_start.y * normal_chord.x;
                 if denom.abs() < 1e-6 {
-                    // proste równoległe — fallback do G0
                     let center = mid + normal_chord * (chord_len / 2.0);
                     return (center, (center - start).length());
                 }
 
-                // proste się przetną -> znajdź punkt przecięcia
                 let delta = mid - start;
                 let t = (delta.x * normal_chord.y - delta.y * normal_chord.x) / denom;
                 let center = start + normal_start * t;
@@ -193,7 +269,6 @@ impl IPolygonDrawer for MyPolygonDrawer {
             }
         }
 
-        // --- G1 continuity on end ---
         if g1_end {
             if let Some(te) = tangent_end {
                 let tangent_dir = (te - end).normalized();
@@ -214,18 +289,51 @@ impl IPolygonDrawer for MyPolygonDrawer {
             }
         }
 
-        // fallback
         let normal = Point::new(-chord.y, chord.x).normalized();
         let center = mid + normal * (chord_len / 2.0);
         (center, (center - start).length())
     }
 
-    fn draw_cubic_bezier(&self, painter: &Painter, p0: Point, p1: Point, p2: Point, p3: Point, stroke: Stroke) {
-        todo!()
+    fn draw_cubic_bezier(
+        &self,
+        painter: &egui::Painter,
+        p0: Point,
+        p1: Point,
+        p2: Point,
+        p3: Point,
+        stroke: egui::Stroke,
+    ) {
+        let steps = 64;
+        let mut prev = egui::pos2(p0.x, p0.y);
+        for i in 1..=steps {
+            let t = i as f32 / steps as f32;
+            let u = 1.0 - t;
+            let x = u*u*u*p0.x + 3.0*u*u*t*p1.x + 3.0*u*t*t*p2.x + t*t*t*p3.x;
+            let y = u*u*u*p0.y + 3.0*u*u*t*p1.y + 3.0*u*t*t*p2.y + t*t*t*p3.y;
+            let cur = egui::pos2(x, y);
+            painter.line_segment([prev, cur], stroke);
+            prev = cur;
+        }
     }
 
-    fn draw_dashed_polyline(&self, painter: &Painter, pts: &[Pos2], stroke: Stroke) {
-        todo!()
+    fn draw_dashed_polyline(&self, painter: &egui::Painter, pts: &[egui::Pos2], stroke: egui::Stroke) {
+        for w in pts.windows(2) {
+            let a = w[0]; let b = w[1];
+            let dir = (b - a);
+            let len = dir.length();
+            if len <= 0.0 { continue; }
+            let step = 6.0_f32; // dash length
+            let n = (len / step).ceil() as usize;
+            for i in 0..n {
+                let t0 = (i as f32) * step / len;
+                let t1 = ((i as f32) * step + step/2.0) / len; // half on, half off
+                let t0 = t0.min(1.0);
+                let t1 = t1.min(1.0);
+                let p0 = a + dir * t0;
+                let p1 = a + dir * t1;
+                painter.line_segment([p0, p1], stroke);
+            }
+        }
     }
 
     fn draw_continuity_label(&self, painter: &Painter, point: &Point) {
