@@ -1,2 +1,18 @@
-/*/target/
-/*/.idea/
+*/target/
+
+# Foldery kompilacji .NET
+ChroaticityChart/bin/
+ChroaticityChart/obj/
+
+# Rider (JetBrains)
+.idea/
+
+# Pliki tymczasowe
+*.user
+*.suo
+*.log
+
+# Systemowe
+.DS_Store
+Thumbs.db
+
