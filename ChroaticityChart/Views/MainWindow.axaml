@@ -1,8 +1,24 @@
-<Window xmlns="https://github.com/avaloniaui"
+<!-- Views/MainWindow.axaml -->
+<Window
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:vm="clr-namespace:ChroaticityChart.ViewModels"
         x:Class="ChroaticityChart.MainWindow"
-        Title="ChroaticityChart">
+        Width="800" Height="600"
+        Title="{Binding Title}"
+        x:DataType="vm:MainWindowViewModel">
+  
+        <!-- Opcja A: ustawienie DataContext w XAML (działa jeśli VM ma publiczny konstruktor bez parametrów) -->
+        <Window.DataContext>
+                <vm:MainWindowViewModel/>
+        </Window.DataContext>
+
+        <Grid ColumnDefinitions="*,*">
+                <ContentControl Grid.Column="0" Content="{Binding SPDViewModel}"/>
+                <Border Grid.Column="1" Background="LightGray">
+                        <TextBlock Text="Tutaj wykres podkowy CIE xy"/>
+                </Border>
+        </Grid>
 </Window>
+
+
