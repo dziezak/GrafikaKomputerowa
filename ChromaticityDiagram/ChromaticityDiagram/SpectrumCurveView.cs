@@ -26,6 +26,88 @@ namespace ChromaticityDiagram
 
         public bool ShowControlPoints { get; set; } = true;
 
+        
+
+        private Ellipse? draggedDot;
+        private int draggedIndex = -1;
+        private Point dragStartCanvasPos;
+
+        private Ellipse CreateDraggableDot(Point p)
+        {
+            var dot = new Ellipse
+            {
+                Width = 8,
+                Height = 8,
+                Fill = Brushes.BlueViolet,
+                Stroke = Brushes.White,
+                StrokeThickness = 0.75,
+                Cursor = Cursors.Hand,
+                Tag = p // zapisz pozycję w Tag (opcjonalnie)
+            };
+            Canvas.SetLeft(dot, p.X - dot.Width / 2);
+            Canvas.SetTop(dot,  p.Y - dot.Height / 2);
+
+            dot.MouseLeftButtonDown += Dot_MouseLeftButtonDown;
+            dot.MouseMove += Dot_MouseMove;
+            dot.MouseLeftButtonUp += Dot_MouseLeftButtonUp;
+
+            return dot;
+        }
+
+        private void Dot_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            draggedDot = sender as Ellipse;
+            if (draggedDot == null) return;
+
+            draggedDot.CaptureMouse();
+            dragStartCanvasPos = e.GetPosition(canvas);
+
+            // znajdź indeks punktu najbliższego klikniętemu kółku
+            double x = Canvas.GetLeft(draggedDot) + draggedDot.Width / 2;
+            double y = Canvas.GetTop (draggedDot) + draggedDot.Height / 2;
+
+            draggedIndex = controlPoints
+                .Select((pt, idx) => (idx, dist: (pt.X - x) * (pt.X - x) + (pt.Y - y) * (pt.Y - y)))
+                .OrderBy(t => t.dist).First().idx;
+
+            e.Handled = true;
+        }
+
+        private void Dot_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (draggedDot == null || e.LeftButton != MouseButtonState.Pressed) return;
+
+            var pos = e.GetPosition(canvas);
+            double dx = pos.X - dragStartCanvasPos.X;
+            double dy = pos.Y - dragStartCanvasPos.Y;
+            dragStartCanvasPos = pos;
+
+            // aktualizuj pozycję kółka
+            Canvas.SetLeft(draggedDot, Canvas.GetLeft(draggedDot) + dx);
+            Canvas.SetTop (draggedDot, Canvas.GetTop (draggedDot) + dy);
+
+            // i odpowiadający wpis w controlPoints
+            if (draggedIndex >= 0 && draggedIndex < controlPoints.Count)
+            {
+                double cx = Canvas.GetLeft(draggedDot) + draggedDot.Width / 2;
+                double cy = Canvas.GetTop (draggedDot) + draggedDot.Height / 2;
+                controlPoints[draggedIndex] = new Point(cx, cy);
+            }
+
+            // przerysuj krzywą (gładko, dynamicznie)
+            Redraw();
+            RaiseChromaticityRequested();
+        }
+
+        private void Dot_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            draggedDot?.ReleaseMouseCapture();
+            draggedDot = null;
+            draggedIndex = -1;
+            e.Handled = true;
+        }
+
+
         public SpectrumCurveView(Canvas hostCanvas)
         {
             canvas = hostCanvas ?? throw new ArgumentNullException(nameof(hostCanvas));
@@ -78,6 +160,7 @@ namespace ChromaticityDiagram
             // (λ [nm] poziomo, Intensywność 0..1 pionowo).
         }
 
+
         private void Redraw()
         {
             canvas.Children.Clear();
@@ -85,55 +168,94 @@ namespace ChromaticityDiagram
 
             if (controlPoints.Count == 0) return;
 
-            // Krzywa (na start Polyline)
-            var poly = new Polyline
-            {
-                Stroke = CurveStroke,
-                StrokeThickness = CurveThickness
-            };
-            foreach (var p in controlPoints.OrderBy(p => p.X))
-                poly.Points.Add(p);
-            canvas.Children.Add(poly);
+            // 1) Posortuj po X
+            var pts = controlPoints.OrderBy(p => p.X).ToList();
 
+            Path path;
+
+            if (pts.Count >= 4)
+            {
+                // 2) Krzywa Bezier: StartPoint pierwszy punkt
+                var fig = new PathFigure { StartPoint = pts[0], IsFilled = false, IsClosed = false };
+
+                // 3) PolyBezierSegment - wymaga wielokrotności 3 kolejnych punktów (poza startem)
+                //    Dla uproszczenia: bierzemy co 3 punkty jako kontrolne + końcowy.
+                var segmentsPoints = new List<Point>();
+
+                // Jeśli liczba punktów nie jest 3n+1, „dociągnij” ostatni segment powtarzając ostatni punkt
+                int remainder = (pts.Count - 1) % 3;
+                int needed = (remainder == 0) ? 0 : (3 - remainder);
+                var padded = pts.GetRange(1, pts.Count - 1).ToList();
+                for (int i = 0; i < needed; i++)
+                    padded.Add(pts[^1]); // dopadamy ostatnim
+
+                segmentsPoints.AddRange(padded);
+
+                var polyBezier = new PolyBezierSegment(segmentsPoints, true);
+                fig.Segments.Add(polyBezier);
+
+                var geo = new PathGeometry();
+                geo.Figures.Add(fig);
+
+                path = new Path
+                {
+                    Stroke = CurveStroke,
+                    StrokeThickness = CurveThickness,
+                    Data = geo
+                };
+            }
+            else
+            {
+                // Fallback: Polyline (gdy za mało punktów do sensownej Beziera)
+                var poly = new Polyline
+                {
+                    Stroke = CurveStroke,
+                    StrokeThickness = CurveThickness
+                };
+                foreach (var p in pts) poly.Points.Add(p);
+                path = new Path { Stroke = Brushes.Transparent }; // tylko po to, by dodać później „dots”
+                canvas.Children.Add(poly);
+            }
+
+            canvas.Children.Add(path);
+
+            // Punkty kontrolne (kółka)
             if (ShowControlPoints)
             {
-                foreach (var p in controlPoints)
+                foreach (var p in pts)
                 {
-                    var dot = new Ellipse
-                    {
-                        Width = 6,
-                        Height = 6,
-                        Fill = Brushes.BlueViolet,
-                        Stroke = Brushes.White,
-                        StrokeThickness = 0.5
-                    };
-                    Canvas.SetLeft(dot, p.X - dot.Width / 2);
-                    Canvas.SetTop(dot, p.Y - dot.Height / 2);
+                    var dot = CreateDraggableDot(p);
                     canvas.Children.Add(dot);
                 }
             }
         }
 
+
+
         public Func<double, double> GetIntensityFunction()
         {
-            var pts = controlPoints.OrderBy(p => p.X).ToArray();
             double width = Math.Max(1, canvas.ActualWidth);
             double height = Math.Max(1, canvas.ActualHeight);
 
-            double LambdaToX(double lambda)
-                => (lambda - LambdaMin) / (LambdaMax - LambdaMin) * width;
+            // Wygeneruj próbki Y dla X=0..width z krzywej (renderowanej)
+            // Proste podejście: dla każdej kolumny X znajdź najbliższy punkt krzywej.
+            // Tu dla uproszczenia użyjemy punktów kontrolnych liniowo (możesz rozbudować o sample PathGeometry).
 
+            var pts = controlPoints.OrderBy(p => p.X).ToList();
+            if (pts.Count == 0)
+                return _ => 0.0;
+
+            // Liniowa interpolacja między sąsiadami (stabilne i szybkie)
             double YToIntensity(double y) => Math.Clamp(1.0 - (y / height), 0.0, 1.0);
-
-            if (pts.Length == 0) return _ => 0.0;
+            double LambdaToX(double lambda) => (lambda - LambdaMin) / (LambdaMax - LambdaMin) * width;
 
             return lambda =>
             {
                 double x = LambdaToX(lambda);
 
-                var rightIdx = Array.FindIndex(pts, p => p.X >= x);
+                var rightIdx = pts.FindIndex(p => p.X >= x);
                 if (rightIdx <= 0) return YToIntensity(pts[0].Y);
-                if (rightIdx >= pts.Length) return YToIntensity(pts[^1].Y);
+                if (rightIdx >= pts.Count) return YToIntensity(pts[^1].Y);
 
                 var pL = pts[rightIdx - 1];
                 var pR = pts[rightIdx];
@@ -143,6 +265,7 @@ namespace ChromaticityDiagram
                 return YToIntensity(y);
             };
         }
+
 
         private void RaiseChromaticityRequested()
         {

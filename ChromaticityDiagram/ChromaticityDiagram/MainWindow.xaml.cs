@@ -40,6 +40,25 @@ public partial class MainWindow : Window
 
         DrawChromaticityStuff();
     }
+    
+    
+    private void ApplyPointsButton_Click(object sender, RoutedEventArgs e)
+    {
+        // Wczytaj punkty z textboxów
+        var pts = new List<Point>();
+        double Parse(string s) => double.TryParse(s, out var v) ? v : 0.0;
+
+        pts.Add(new Point(Parse(P1X.Text), Parse(P1Y.Text)));
+        pts.Add(new Point(Parse(P2X.Text), Parse(P2Y.Text)));
+        pts.Add(new Point(Parse(P3X.Text), Parse(P3Y.Text)));
+        pts.Add(new Point(Parse(P4X.Text), Parse(P4Y.Text)));
+        pts.Add(new Point(Parse(P5X.Text), Parse(P5Y.Text)));
+
+        // Przekaż do widoku krzywej
+        spectrumCurveView.Clear();
+        foreach (var p in pts) spectrumCurveView.AddPoint(p);
+    }
+
 
     private void DrawChromaticityStuff()
     {
@@ -251,5 +270,29 @@ public partial class MainWindow : Window
         Canvas.SetLeft(colorPatch, 10);
         Canvas.SetTop (colorPatch, 10);
     }
+    
+    
+    private void DrawBezierCurve(List<Point> points)
+    {
+        spectrumCanvas.Children.Clear();
+        if (points.Count < 4) return;
+
+        var pathFigure = new PathFigure { StartPoint = points[0] };
+        var bezier = new BezierSegment(points[1], points[2], points[3], true);
+        pathFigure.Segments.Add(bezier);
+
+        var pathGeometry = new PathGeometry();
+        pathGeometry.Figures.Add(pathFigure);
+
+        var path = new Path
+        {
+            Stroke = Brushes.Blue,
+            StrokeThickness = 2,
+            Data = pathGeometry
+        };
+
+        spectrumCanvas.Children.Add(path);
+    }
+
 
 }

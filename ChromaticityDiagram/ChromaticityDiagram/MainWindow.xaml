@@ -12,6 +12,40 @@
             <ColumnDefinition Width="3*"/> <!-- Podkowa -->
             <ColumnDefinition Width="2*"/> <!-- Krzywa widmowa -->
         </Grid.ColumnDefinitions>
+        
+        
+        <!-- Panel wejściowy dla punktów -->
+        <StackPanel Orientation="Horizontal" Margin="8" Grid.Row="0">
+            <!-- 5 par współrzędnych (X,Y) -->
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="P1 (X,Y)" />
+                <TextBox Name="P1X" Width="60" Text="20"/>
+                <TextBox Name="P1Y" Width="60" Text="120"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="P2 (X,Y)" />
+                <TextBox Name="P2X" Width="60" Text="80"/>
+                <TextBox Name="P2Y" Width="60" Text="60"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="P3 (X,Y)" />
+                <TextBox Name="P3X" Width="60" Text="160"/>
+                <TextBox Name="P3Y" Width="60" Text="100"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="P4 (X,Y)" />
+                <TextBox Name="P4X" Width="60" Text="240"/>
+                <TextBox Name="P4Y" Width="60" Text="40"/>
+            </StackPanel>
+            <StackPanel Margin="0,0,16,0">
+                <TextBlock Text="P5 (X,Y)" />
+                <TextBox Name="P5X" Width="60" Text="300"/>
+                <TextBox Name="P5Y" Width="60" Text="80"/>
+            </StackPanel>
+
+            <Button Content="Zastosuj" Click="ApplyPointsButton_Click" Padding="12,6"/>
+        </StackPanel>
+
 
         <!-- Canvas dla podkowy -->
         <Canvas Name="myCanvas" Background="White" Grid.Column="0"/>
