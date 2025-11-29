@@ -8,5 +8,7 @@
 //------------------------------------------------------------------------------
 
 [assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("data/wykres.txt")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("podkowa.jpg")]
+[assembly: System.Windows.Resources.AssemblyAssociatedContentFileAttribute("data/image.jpg")]
 
 

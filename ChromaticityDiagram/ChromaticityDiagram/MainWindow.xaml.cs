@@ -11,9 +11,6 @@ using System.Windows.Shapes;
 
 namespace ChromaticityDiagram;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
     private Spectrum spectrum;
@@ -26,8 +23,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         DrawAxes();
         Loaded += OnLoad;
-        //SizeChanged += DrawAxes();
-        
+        SetBackgroundFromResource("podkowa.jpg");
         myCanvas.SizeChanged += (_, __) => DrawChromaticityStuff();
         
     }
@@ -38,138 +34,123 @@ public partial class MainWindow : Window
         spectrumCurveView = new SpectrumCurveView(spectrumCanvas);
         spectrumCurveView.ChromaticityRequested += (_, intensityFunc) =>
         {
-            //Console.WriteLine("Event fired!");
             UpdateChromaticityFromCurve(intensityFunc);
         };
 
         DrawChromaticityStuff();
     }
-    
-    
 
-        private void DrawAxes()
+    private void DrawAxes()
+    {
+        double width = axesCanvas.ActualWidth;
+        double height = axesCanvas.ActualHeight;
+
+        if (double.IsNaN(width) || width == 0) width = axesCanvas.RenderSize.Width;
+        if (double.IsNaN(height) || height == 0) height = axesCanvas.RenderSize.Height;
+
+        if (width <= 0) width = 400;
+        if (height <= 0) height = 400;
+
+        axesCanvas.Children.Clear();
+
+        const double left = 40;
+        const double right = 20;
+        const double top = 20;
+        const double bottom = 40;
+
+        Line xAxis = new Line
         {
-            double width = axesCanvas.ActualWidth;
-            double height = axesCanvas.ActualHeight;
+            X1 = left,
+            Y1 = height - bottom,
+            X2 = width - right,
+            Y2 = height - bottom,
+            Stroke = Brushes.Black,
+            StrokeThickness = 2
+        };
+        axesCanvas.Children.Add(xAxis);
 
-            // Jeśli jeszcze niezmierzone, użyj rozmiaru z kontenera
-            if (double.IsNaN(width) || width == 0) width = axesCanvas.RenderSize.Width;
-            if (double.IsNaN(height) || height == 0) height = axesCanvas.RenderSize.Height;
+        Line yAxis = new Line
+        {
+            X1 = left,
+            Y1 = height - bottom,
+            X2 = left,
+            Y2 = top,
+            Stroke = Brushes.Black,
+            StrokeThickness = 2
+        };
+        axesCanvas.Children.Add(yAxis);
 
-            // Fallback (np. przy pierwszym wywołaniu w bardzo wczesnym cyklu życia)
-            if (width <= 0) width = 400;
-            if (height <= 0) height = 400;
+        var gridBrush = new SolidColorBrush(Color.FromRgb(220, 220, 220));
 
-            axesCanvas.Children.Clear();
+        int divisions = 10;
+        for (int i = 0; i <= divisions; i++)
+        {
+            double x = left + i * (width - left - right) / divisions;
+            double y = height - bottom - i * (height - top - bottom) / divisions;
 
-            // Marginesy osi
-            const double left = 40;
-            const double right = 20;
-            const double top = 20;
-            const double bottom = 40;
-
-            // Oś X
-            Line xAxis = new Line
+            axesCanvas.Children.Add(new Line
             {
-                X1 = left,
-                Y1 = height - bottom,
-                X2 = width - right,
-                Y2 = height - bottom,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
-            };
-            axesCanvas.Children.Add(xAxis);
+                X1 = x, Y1 = height - bottom,
+                X2 = x, Y2 = height - bottom + 5,
+                Stroke = Brushes.Black, StrokeThickness = 1
+            });
 
-            // Oś Y
-            Line yAxis = new Line
+            if (i > 0 && i < divisions)
             {
-                X1 = left,
-                Y1 = height - bottom,
-                X2 = left,
-                Y2 = top,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
-            };
-            axesCanvas.Children.Add(yAxis);
-
-            // (Opcjonalnie) cienkie linie siatki
-            var gridBrush = new SolidColorBrush(Color.FromRgb(220, 220, 220));
-
-            // Podziałki i etykiety co 10 (0..100)
-            int divisions = 10;
-            for (int i = 0; i <= divisions; i++)
-            {
-                double x = left + i * (width - left - right) / divisions;
-                double y = height - bottom - i * (height - top - bottom) / divisions;
-
-                // Podziałki na osi X
                 axesCanvas.Children.Add(new Line
                 {
                     X1 = x, Y1 = height - bottom,
-                    X2 = x, Y2 = height - bottom + 5,
-                    Stroke = Brushes.Black, StrokeThickness = 1
+                    X2 = x, Y2 = top,
+                    Stroke = gridBrush, StrokeThickness = 0.5
                 });
+            }
 
-                // Siatka pionowa (lekka)
-                if (i > 0 && i < divisions)
-                {
-                    axesCanvas.Children.Add(new Line
-                    {
-                        X1 = x, Y1 = height - bottom,
-                        X2 = x, Y2 = top,
-                        Stroke = gridBrush, StrokeThickness = 0.5
-                    });
-                }
+            var labelX = new TextBlock
+            {
+                Text = (i * 10).ToString(),
+                FontSize = 12
+            };
+            Canvas.SetLeft(labelX, x - 10);
+            Canvas.SetTop(labelX, height - bottom + 8);
+            axesCanvas.Children.Add(labelX);
 
-                var labelX = new TextBlock
-                {
-                    Text = (i * 10).ToString(),
-                    FontSize = 12
-                };
-                Canvas.SetLeft(labelX, x - 10);
-                Canvas.SetTop(labelX, height - bottom + 8);
-                axesCanvas.Children.Add(labelX);
+            axesCanvas.Children.Add(new Line
+            {
+                X1 = left, Y1 = y,
+                X2 = left - 5, Y2 = y,
+                Stroke = Brushes.Black, StrokeThickness = 1
+            });
 
-                // Podziałki na osi Y
+            if (i > 0 && i < divisions)
+            {
                 axesCanvas.Children.Add(new Line
                 {
                     X1 = left, Y1 = y,
-                    X2 = left - 5, Y2 = y,
-                    Stroke = Brushes.Black, StrokeThickness = 1
+                    X2 = width - right, Y2 = y,
+                    Stroke = gridBrush, StrokeThickness = 0.5
                 });
-
-                // Siatka pozioma (lekka)
-                if (i > 0 && i < divisions)
-                {
-                    axesCanvas.Children.Add(new Line
-                    {
-                        X1 = left, Y1 = y,
-                        X2 = width - right, Y2 = y,
-                        Stroke = gridBrush, StrokeThickness = 0.5
-                    });
-                }
-
-                var labelY = new TextBlock
-                {
-                    Text = (i * 10).ToString(),
-                    FontSize = 12
-                };
-                Canvas.SetLeft(labelY, left - 32);
-                Canvas.SetTop(labelY, y - 8);
-                axesCanvas.Children.Add(labelY);
             }
 
-            // Opisy osi
-            var xTitle = new TextBlock { Text = "X", FontWeight = FontWeights.Bold };
-            Canvas.SetLeft(xTitle, width - right - 10);
-            Canvas.SetTop(xTitle, height - bottom + 24);
-            axesCanvas.Children.Add(xTitle);
-
-            var yTitle = new TextBlock { Text = "Y", FontWeight = FontWeights.Bold };
-            Canvas.SetLeft(yTitle, left - 18);
-            Canvas.SetTop(yTitle, top - 4);
-            axesCanvas.Children.Add(yTitle);
+            var labelY = new TextBlock
+            {
+                Text = (i * 10).ToString(),
+                FontSize = 12
+            };
+            Canvas.SetLeft(labelY, left - 32);
+            Canvas.SetTop(labelY, y - 8);
+            axesCanvas.Children.Add(labelY);
         }
+
+        var xTitle = new TextBlock { Text = "X", FontWeight = FontWeights.Bold };
+        Canvas.SetLeft(xTitle, width - right - 10);
+        Canvas.SetTop(xTitle, height - bottom + 24);
+        axesCanvas.Children.Add(xTitle);
+
+        var yTitle = new TextBlock { Text = "Y", FontWeight = FontWeights.Bold };
+        Canvas.SetLeft(yTitle, left - 18);
+        Canvas.SetTop(yTitle, top - 4);
+        axesCanvas.Children.Add(yTitle);
+    }
 
     
     
@@ -177,7 +158,6 @@ public partial class MainWindow : Window
     {
         Point clickPoint = e.GetPosition(spectrumCanvas);
 
-        // Dodaj punkt (czerwona kropka)
         Ellipse dot = new Ellipse
         {
             Width = 8,
@@ -198,7 +178,6 @@ public partial class MainWindow : Window
         DrawSpectrumCanvas(myCanvas, spectrum);  // brzeg podkowy (kolorowy)
         DrawSRGBGamut(myCanvas);                 // trójkąt gamutu sRGB
 
-        // kolorowy prostokąt (początkowo neutralny)
         if (!myCanvas.Children.Contains(colorPatch))
             myCanvas.Children.Add(colorPatch);
         Canvas.SetLeft(colorPatch, 10);
@@ -252,14 +231,22 @@ public partial class MainWindow : Window
 
     public void DrawSpectrumCanvas(Canvas canvas, Spectrum spectrum)
     {
-        double w = canvas.ActualWidth;
-        double h = canvas.ActualHeight;
+        double W = canvas.ActualWidth;
+        double H = canvas.ActualHeight;
 
-        if (w <= 0 || h <= 0 || spectrum == null || spectrum.Points.Count == 0)
+        if (W <= 0 || H <= 0 || spectrum == null || spectrum.Points.Count == 0)
             return;
 
-        double prevX = double.NaN, prevY = double.NaN;
-        double prevLambda = double.NaN;
+        canvas.Children.Clear();
+
+        // ---- TU JEST KLUCZ ----
+        double cieOriginX = 0.20 * W;  // miejsce gdzie jest x=0
+        double cieOriginY = 0.82 * H;  // miejsce gdzie jest y=0
+        double cieMaxX    = 1 * W;  // miejsce gdzie jest x=1
+        double cieMaxY    = 0.01 * H;  // miejsce gdzie jest y=1
+
+        Point? prev = null;
+        double prevLambda = 0;
 
         foreach (var s in spectrum.Points)
         {
@@ -269,80 +256,122 @@ public partial class MainWindow : Window
             double x = s.X / sum;
             double y = s.Y / sum;
 
-            if (double.IsNaN(x) || double.IsNaN(y)) continue;
+            // Przeliczenie na piksele z uwzględnieniem rzeczywistego położenia osi
+            double px = cieOriginX + x * (cieMaxX - cieOriginX);
+            double py = cieOriginY - y * (cieOriginY - cieMaxY);
 
-            double px = x * w;
-            double py = (1 - y) * h;
+            Point p = new Point(px, py);
 
-            if (double.IsNaN(px) || double.IsNaN(py)) continue;
-
-            if (!double.IsNaN(prevX) && !double.IsNaN(prevY))
+            if (prev.HasValue)
             {
-                var brush = new SolidColorBrush(WavelengthToRGB(prevLambda));
                 var line = new Line
                 {
-                    X1 = prevX,
-                    Y1 = prevY,
-                    X2 = px,
-                    Y2 = py,
-                    Stroke = brush,
+                    X1 = prev.Value.X,
+                    Y1 = prev.Value.Y,
+                    X2 = p.X,
+                    Y2 = p.Y,
+                    Stroke = new SolidColorBrush(WavelengthToRGB(prevLambda)),
                     StrokeThickness = 2
                 };
                 canvas.Children.Add(line);
             }
 
-            prevX = px;
-            prevY = py;
+            prev = p;
             prevLambda = s.Lambda;
         }
     }
 
+
+
     
+    private void ComputeCieTransform(Canvas canvas, out double originX, out double originY, out double maxX, out double maxY)
+    {
+        double W = canvas.ActualWidth;
+        double H = canvas.ActualHeight;
+
+        originX = 0.20 * W;
+        originY = 0.82 * H;
+        maxX    = 1.00 * W;
+        maxY    = 0.01 * H;
+
+    }
+
+    // Mapuje (x,y) chromatyczności (w zakresie 0..1) na współrzędne piksela canvasu
+    private Point MapChromaticityToPixel(double x, double y, Canvas canvas)
+    {
+        ComputeCieTransform(canvas, out double originX, out double originY, out double maxX, out double maxY);
+
+        double px = originX + x * (maxX - originX);
+        double py = originY - y * (originY - maxY); // minus bo y rośnie w górę w układzie CIE, ale w dół w pikselach
+        return new Point(px, py);
+    }
+
     private void DrawSRGBGamut(Canvas canvas)
     {
-        var w = canvas.ActualWidth; var h = canvas.ActualHeight;
+        // usuń ewentualne stare elementy związane tylko z gamutem,
+        // lub po prostu dopisz – tutaj dodajemy nowe elementy
+        double w = canvas.ActualWidth;
+        double h = canvas.ActualHeight;
+        if (w <= 0 || h <= 0) return;
+
+        // punkty gamutu sRGB w współrzędnych chromatyczności
         var rgb = new[] {
             (x:0.640, y:0.330),
             (x:0.300, y:0.600),
             (x:0.150, y:0.060)
         };
 
+        // utwórz polygon i wypełnienie
         var polygon = new Polygon
         {
             Stroke = Brushes.Gray,
             StrokeThickness = 1.5,
-            Fill = new SolidColorBrush(Color.FromArgb(30, 128,128,128))
+            Fill = new SolidColorBrush(Color.FromArgb(30, 128, 128, 128)),
+            IsHitTestVisible = false
         };
+
         foreach (var p in rgb)
-            polygon.Points.Add(new Point(p.x * w, (1 - p.y) * h));
+        {
+            var pt = MapChromaticityToPixel(p.x, p.y, canvas);
+            polygon.Points.Add(pt);
+        }
 
         canvas.Children.Add(polygon);
 
         // Whitepoint D65
         var wp = (x:0.3127, y:0.3290);
-        var wpMarker = new Ellipse { Width=6, Height=6, Fill=Brushes.White, Stroke=Brushes.Black, StrokeThickness=1 };
-        Canvas.SetLeft(wpMarker, wp.x * w - 3);
-        Canvas.SetTop (wpMarker, (1-wp.y) * h - 3);
+        var wpMarker = new Ellipse { Width=6, Height=6, Fill=Brushes.White, Stroke=Brushes.Black, StrokeThickness=1, IsHitTestVisible = false };
+        var wpPixel = MapChromaticityToPixel(wp.x, wp.y, canvas);
+        Canvas.SetLeft(wpMarker, wpPixel.X - wpMarker.Width / 2);
+        Canvas.SetTop (wpMarker, wpPixel.Y - wpMarker.Height / 2);
         canvas.Children.Add(wpMarker);
     }
 
-   
-    private void SetBackgroundFromWeb(string url)
+
+    private void SetBackgroundFromResource(string resourcePath)
     {
-        var bi = new BitmapImage();
-        bi.BeginInit();
-        bi.UriSource = new Uri(url, UriKind.Absolute);
-        bi.CacheOption = BitmapCacheOption.OnLoad;
-        bi.EndInit();
-
-        var brush = new ImageBrush(bi)
+        try
         {
-            Stretch = Stretch.Uniform,
-            Opacity = 0.35 
-        };
+            var uri = new Uri(resourcePath, UriKind.Relative);
+            var bi = new BitmapImage(uri);
 
-        myCanvas.Background = brush;
+            var brush = new ImageBrush(bi)
+            {
+                Stretch = Stretch.Fill, // zachowuje proporcje
+                AlignmentX = AlignmentX.Center,
+                AlignmentY = AlignmentY.Center,
+                Opacity = 1 // przezroczystość
+            };
+
+            myCanvas.Background = brush;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Nie udało się ustawić tła: {ex.Message}");
+        }
     }
+
+
  
    
     private void UpdateChromaticityFromCurve(Func<double, double> intensity)
@@ -350,8 +379,11 @@ public partial class MainWindow : Window
         var (x, y) = spectrum.GetChromaticityFromIntensity(intensity);
         double w = myCanvas.ActualWidth, h = myCanvas.ActualHeight;
 
-        Canvas.SetLeft(marker, x * w - marker.Width / 2);
-        Canvas.SetTop(marker, (1 - y) * h - marker.Height / 2);
+        Point p = MapChromaticityToPixel(x, y, myCanvas);
+
+        Canvas.SetLeft(marker, p.X - marker.Width / 2);
+        Canvas.SetTop(marker, p.Y - marker.Height / 2);
+
 
         if (!myCanvas.Children.Contains(marker))
             myCanvas.Children.Add(marker);
@@ -361,32 +393,52 @@ public partial class MainWindow : Window
     }
  
     
-    private static Color ChromaticityToSRGBColor(double x, double y, double Y)
+    public Color ChromaticityToSRGBColor(double x, double y, double Y = 1.0)
     {
-        if (y <= 0) return Colors.Black;
-
+        // 1. Rekonstrukcja XYZ z (x,y,Y)
+        if (y <= 0) return Color.FromRgb(0, 0, 0); 
         double X = (x / y) * Y;
         double Z = ((1 - x - y) / y) * Y;
 
-        double rL =  3.2406 * X + (-1.5372) * Y + (-0.4986) * Z;
-        double gL = -0.9689 * X +  1.8758  * Y +  0.0415  * Z;
-        double bL =  0.0557 * X + (-0.2040) * Y +  1.0570  * Z;
+        // 2. XYZ → Linear sRGB
+        double r_lin =  3.2406 * X - 1.5372 * Y - 0.4986 * Z;
+        double g_lin = -0.9689 * X + 1.8758 * Y + 0.0415 * Z;
+        double b_lin =  0.0557 * X - 0.2040 * Y + 1.0570 * Z;
 
-        rL = Math.Clamp(rL, 0.0, 1.0);
-        gL = Math.Clamp(gL, 0.0, 1.0);
-        bL = Math.Clamp(bL, 0.0, 1.0);
+        // 3. Korekta gamma sRGB (OETF) i konwersja na 8-bit
+    
+        // Korekcja gamma jest stosowana do wartości liniowych
+        double r_srgb = Gamma(r_lin);
+        double g_srgb = Gamma(g_lin);
+        double b_srgb = Gamma(b_lin);
 
-        byte R = ToSRGB8(rL);
-        byte G = ToSRGB8(gL);
-        byte B = ToSRGB8(bL);
-
-        return Color.FromRgb(R, G, B);
+        return Color.FromRgb(
+            ClampAndConvertToByte(r_srgb),
+            ClampAndConvertToByte(g_srgb),
+            ClampAndConvertToByte(b_srgb)
+        );
     }
+    
+    private static byte ClampAndConvertToByte(double value)
+    {
+        double clamped = Math.Clamp(value, 0.0, 1.0);
+        return (byte)Math.Round(clamped * 255.0);
+    }
+
+    private double Gamma(double c)
+    {
+        if (c <= 0.0031308) return 12.92 * c;
+        return 1.055 * Math.Pow(c, 1.0 / 2.4) - 0.055;
+    }
+
 
     private static byte ToSRGB8(double u)
     {
-        double v = (u <= 0.0031308) ? (12.92 * u) : (1.055 * Math.Pow(u, 1.0 / 2.4) - 0.055);
-        v = Math.Clamp(v, 0.0, 1.0);
+        // Jeśli u jest już po korekcji gamma, to tylko przypinamy i konwertujemy
+        // Twoja obecna funkcja ToSRGB8 wykonuje RÓWNIEŻ korekcję gamma, co jest BŁĘDEM
+    
+        // Zastąp starą implementację ToSRGB8 tą uproszczoną:
+        double v = Math.Clamp(u, 0.0, 1.0);
         return (byte)Math.Round(v * 255.0);
     }
 

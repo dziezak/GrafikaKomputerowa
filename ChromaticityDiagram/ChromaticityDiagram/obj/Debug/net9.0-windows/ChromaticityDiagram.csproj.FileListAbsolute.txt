@@ -20,3 +20,5 @@ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\ChromaticityDiagram\Chromatici
 C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\ChromaticityDiagram\ChromaticityDiagram\obj\Debug\net9.0-windows\ref\ChromaticityDiagram.dll
 C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\ChromaticityDiagram\ChromaticityDiagram\bin\Debug\net9.0-windows\Data\wykres.txt
 C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\ChromaticityDiagram\ChromaticityDiagram\obj\Debug\net9.0-windows\ChromaticityDiagram_Content.g.cs
+C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\ChromaticityDiagram\ChromaticityDiagram\bin\Debug\net9.0-windows\podkowa.jpg
+C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\ChromaticityDiagram\ChromaticityDiagram\bin\Debug\net9.0-windows\Data\image.jpg
