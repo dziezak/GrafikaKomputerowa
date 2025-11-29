@@ -24,8 +24,12 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        DrawAxes();
         Loaded += OnLoad;
+        //SizeChanged += DrawAxes();
+        
         myCanvas.SizeChanged += (_, __) => DrawChromaticityStuff();
+        
     }
 
     private void OnLoad(object sender, RoutedEventArgs e)
@@ -34,7 +38,7 @@ public partial class MainWindow : Window
         spectrumCurveView = new SpectrumCurveView(spectrumCanvas);
         spectrumCurveView.ChromaticityRequested += (_, intensityFunc) =>
         {
-            Console.WriteLine("Event fired!");
+            //Console.WriteLine("Event fired!");
             UpdateChromaticityFromCurve(intensityFunc);
         };
 
@@ -42,21 +46,147 @@ public partial class MainWindow : Window
     }
     
     
-    private void ApplyPointsButton_Click(object sender, RoutedEventArgs e)
+
+        private void DrawAxes()
+        {
+            double width = axesCanvas.ActualWidth;
+            double height = axesCanvas.ActualHeight;
+
+            // Jeśli jeszcze niezmierzone, użyj rozmiaru z kontenera
+            if (double.IsNaN(width) || width == 0) width = axesCanvas.RenderSize.Width;
+            if (double.IsNaN(height) || height == 0) height = axesCanvas.RenderSize.Height;
+
+            // Fallback (np. przy pierwszym wywołaniu w bardzo wczesnym cyklu życia)
+            if (width <= 0) width = 400;
+            if (height <= 0) height = 400;
+
+            axesCanvas.Children.Clear();
+
+            // Marginesy osi
+            const double left = 40;
+            const double right = 20;
+            const double top = 20;
+            const double bottom = 40;
+
+            // Oś X
+            Line xAxis = new Line
+            {
+                X1 = left,
+                Y1 = height - bottom,
+                X2 = width - right,
+                Y2 = height - bottom,
+                Stroke = Brushes.Black,
+                StrokeThickness = 2
+            };
+            axesCanvas.Children.Add(xAxis);
+
+            // Oś Y
+            Line yAxis = new Line
+            {
+                X1 = left,
+                Y1 = height - bottom,
+                X2 = left,
+                Y2 = top,
+                Stroke = Brushes.Black,
+                StrokeThickness = 2
+            };
+            axesCanvas.Children.Add(yAxis);
+
+            // (Opcjonalnie) cienkie linie siatki
+            var gridBrush = new SolidColorBrush(Color.FromRgb(220, 220, 220));
+
+            // Podziałki i etykiety co 10 (0..100)
+            int divisions = 10;
+            for (int i = 0; i <= divisions; i++)
+            {
+                double x = left + i * (width - left - right) / divisions;
+                double y = height - bottom - i * (height - top - bottom) / divisions;
+
+                // Podziałki na osi X
+                axesCanvas.Children.Add(new Line
+                {
+                    X1 = x, Y1 = height - bottom,
+                    X2 = x, Y2 = height - bottom + 5,
+                    Stroke = Brushes.Black, StrokeThickness = 1
+                });
+
+                // Siatka pionowa (lekka)
+                if (i > 0 && i < divisions)
+                {
+                    axesCanvas.Children.Add(new Line
+                    {
+                        X1 = x, Y1 = height - bottom,
+                        X2 = x, Y2 = top,
+                        Stroke = gridBrush, StrokeThickness = 0.5
+                    });
+                }
+
+                var labelX = new TextBlock
+                {
+                    Text = (i * 10).ToString(),
+                    FontSize = 12
+                };
+                Canvas.SetLeft(labelX, x - 10);
+                Canvas.SetTop(labelX, height - bottom + 8);
+                axesCanvas.Children.Add(labelX);
+
+                // Podziałki na osi Y
+                axesCanvas.Children.Add(new Line
+                {
+                    X1 = left, Y1 = y,
+                    X2 = left - 5, Y2 = y,
+                    Stroke = Brushes.Black, StrokeThickness = 1
+                });
+
+                // Siatka pozioma (lekka)
+                if (i > 0 && i < divisions)
+                {
+                    axesCanvas.Children.Add(new Line
+                    {
+                        X1 = left, Y1 = y,
+                        X2 = width - right, Y2 = y,
+                        Stroke = gridBrush, StrokeThickness = 0.5
+                    });
+                }
+
+                var labelY = new TextBlock
+                {
+                    Text = (i * 10).ToString(),
+                    FontSize = 12
+                };
+                Canvas.SetLeft(labelY, left - 32);
+                Canvas.SetTop(labelY, y - 8);
+                axesCanvas.Children.Add(labelY);
+            }
+
+            // Opisy osi
+            var xTitle = new TextBlock { Text = "X", FontWeight = FontWeights.Bold };
+            Canvas.SetLeft(xTitle, width - right - 10);
+            Canvas.SetTop(xTitle, height - bottom + 24);
+            axesCanvas.Children.Add(xTitle);
+
+            var yTitle = new TextBlock { Text = "Y", FontWeight = FontWeights.Bold };
+            Canvas.SetLeft(yTitle, left - 18);
+            Canvas.SetTop(yTitle, top - 4);
+            axesCanvas.Children.Add(yTitle);
+        }
+
+    
+    
+    private void SpectrumCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        // Wczytaj punkty z textboxów
-        var pts = new List<Point>();
-        double Parse(string s) => double.TryParse(s, out var v) ? v : 0.0;
+        Point clickPoint = e.GetPosition(spectrumCanvas);
 
-        pts.Add(new Point(Parse(P1X.Text), Parse(P1Y.Text)));
-        pts.Add(new Point(Parse(P2X.Text), Parse(P2Y.Text)));
-        pts.Add(new Point(Parse(P3X.Text), Parse(P3Y.Text)));
-        pts.Add(new Point(Parse(P4X.Text), Parse(P4Y.Text)));
-        pts.Add(new Point(Parse(P5X.Text), Parse(P5Y.Text)));
-
-        // Przekaż do widoku krzywej
-        spectrumCurveView.Clear();
-        foreach (var p in pts) spectrumCurveView.AddPoint(p);
+        // Dodaj punkt (czerwona kropka)
+        Ellipse dot = new Ellipse
+        {
+            Width = 8,
+            Height = 8,
+            Fill = Brushes.Red
+        };
+        Canvas.SetLeft(dot, clickPoint.X - 4);
+        Canvas.SetTop(dot, clickPoint.Y - 4);
+        spectrumCanvas.Children.Add(dot);
     }
 
 
@@ -208,7 +338,7 @@ public partial class MainWindow : Window
         var brush = new ImageBrush(bi)
         {
             Stretch = Stretch.Uniform,
-            Opacity = 0.35 // lekko przeźroczyste, żeby widzieć rysunek
+            Opacity = 0.35 
         };
 
         myCanvas.Background = brush;
@@ -272,27 +402,7 @@ public partial class MainWindow : Window
     }
     
     
-    private void DrawBezierCurve(List<Point> points)
-    {
-        spectrumCanvas.Children.Clear();
-        if (points.Count < 4) return;
 
-        var pathFigure = new PathFigure { StartPoint = points[0] };
-        var bezier = new BezierSegment(points[1], points[2], points[3], true);
-        pathFigure.Segments.Add(bezier);
-
-        var pathGeometry = new PathGeometry();
-        pathGeometry.Figures.Add(pathFigure);
-
-        var path = new Path
-        {
-            Stroke = Brushes.Blue,
-            StrokeThickness = 2,
-            Data = pathGeometry
-        };
-
-        spectrumCanvas.Children.Add(path);
-    }
 
 
 }

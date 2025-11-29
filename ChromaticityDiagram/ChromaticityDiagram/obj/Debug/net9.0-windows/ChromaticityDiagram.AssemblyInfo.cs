@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ChromaticityDiagram")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+15ac752dac4ab7824ea20442bf0690fd4d0c2833")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6c611b04657014535019f49b07661fb2f82d50b7")]
 [assembly: System.Reflection.AssemblyProductAttribute("ChromaticityDiagram")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ChromaticityDiagram")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
