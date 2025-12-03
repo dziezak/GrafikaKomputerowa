@@ -42,7 +42,7 @@ namespace ChromaticityDiagram
                 Stroke = Brushes.White,
                 StrokeThickness = 0.75,
                 Cursor = Cursors.Hand,
-                Tag = p // zapisz pozycję w Tag (opcjonalnie)
+                Tag = p
             };
             Canvas.SetLeft(dot, p.X - dot.Width / 2);
             Canvas.SetTop(dot,  p.Y - dot.Height / 2);
@@ -81,7 +81,6 @@ namespace ChromaticityDiagram
             double dy = pos.Y - dragStartCanvasPos.Y;
             dragStartCanvasPos = pos;
 
-            // aktualizuj pozycję kółka
             Canvas.SetLeft(draggedDot, Canvas.GetLeft(draggedDot) + dx);
             Canvas.SetTop (draggedDot, Canvas.GetTop (draggedDot) + dy);
 
