@@ -17,15 +17,18 @@ public partial class MainWindow : Window
     private SpectrumCurveView spectrumCurveView;
     private Ellipse marker = new Ellipse { Width = 8, Height = 8, Fill = Brushes.Black, Stroke = Brushes.White, StrokeThickness = 1 };
     private Rectangle colorPatch = new Rectangle {Width = 80, Height = 40, Stroke = Brushes.Black, StrokeThickness = 1};
-    
+    public List<Point> cieBoundaryCanvas = new List<Point>();
+    // Mapowanie trybu gamutu
+    public enum GamutMapping { Clip, Normalize }
+ 
     public MainWindow()
     {
         InitializeComponent();
         DrawAxes();
         Loaded += OnLoad;
-        SetBackgroundFromResource("podkowa.jpg");
-        myCanvas.SizeChanged += (_, __) => DrawChromaticityStuff();
-        
+        //myCanvas.SizeChanged += (_, __) => DrawChromaticityStuff();
+        myCanvas.SizeChanged += (_, __) => DrawSpectrumCanvas(myCanvas, spectrum);
+        myCanvas.SizeChanged += (_, __) => DrawChromaticityFill(myCanvas, GamutMapping.Clip);
     }
 
     private void OnLoad(object sender, RoutedEventArgs e)
@@ -34,10 +37,11 @@ public partial class MainWindow : Window
         spectrumCurveView = new SpectrumCurveView(spectrumCanvas);
         spectrumCurveView.ChromaticityRequested += (_, intensityFunc) =>
         {
-            UpdateChromaticityFromCurve(intensityFunc);
+            UpdateChromaticityFromCurve(intensityFunc); // point on ChromaticityDiagram
         };
 
-        DrawChromaticityStuff();
+        DrawSpectrumCanvas(myCanvas, spectrum);
+        DrawChromaticityFill(myCanvas, GamutMapping.Clip);
     }
 
     private void DrawAxes()
@@ -153,7 +157,6 @@ public partial class MainWindow : Window
     }
 
     
-    
     private void SpectrumCanvas_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         Point clickPoint = e.GetPosition(spectrumCanvas);
@@ -175,8 +178,8 @@ public partial class MainWindow : Window
         if (myCanvas.ActualWidth <= 0 || myCanvas.ActualHeight <= 0 || spectrum == null) return;
 
         myCanvas.Children.Clear();
-        DrawSpectrumCanvas(myCanvas, spectrum);  // brzeg podkowy (kolorowy)
-        DrawSRGBGamut(myCanvas);                 // trójkąt gamutu sRGB
+        DrawSpectrumCanvas(myCanvas, spectrum);
+        DrawSRGBGamut(myCanvas);
 
         if (!myCanvas.Children.Contains(colorPatch))
             myCanvas.Children.Add(colorPatch);
@@ -226,8 +229,19 @@ public partial class MainWindow : Window
         }
         return Color.FromRgb((byte)(R * 255), (byte)(G * 255), (byte)(B * 255));
     }
+    
+    Point MapXYToCanvas(double x, double y, double W, double H)
+    {
+        double scale = Math.Min(W / 0.8, H / 0.9);
+        double offsetX = (W - 0.8 * scale) / 2;
+        double offsetY = (H - 0.9 * scale) / 2;
 
+        double px = offsetX + x * scale;
+        double py = H - (offsetY + y * scale);
 
+        return new Point(px, py);
+    }
+    
 
     public void DrawSpectrumCanvas(Canvas canvas, Spectrum spectrum)
     {
@@ -238,12 +252,12 @@ public partial class MainWindow : Window
             return;
 
         canvas.Children.Clear();
+        cieBoundaryCanvas.Clear();
 
-        // ---- TU JEST KLUCZ ----
-        double cieOriginX = 0.20 * W;  // miejsce gdzie jest x=0
-        double cieOriginY = 0.82 * H;  // miejsce gdzie jest y=0
-        double cieMaxX    = 1 * W;  // miejsce gdzie jest x=1
-        double cieMaxY    = 0.01 * H;  // miejsce gdzie jest y=1
+        double cieOriginX = 0.20 * W;
+        double cieOriginY = 0.82 * H;
+        double cieMaxX    = 1 * W;
+        double cieMaxY    = 0.01 * H;
 
         Point? prev = null;
         double prevLambda = 0;
@@ -256,11 +270,12 @@ public partial class MainWindow : Window
             double x = s.X / sum;
             double y = s.Y / sum;
 
-            // Przeliczenie na piksele z uwzględnieniem rzeczywistego położenia osi
-            double px = cieOriginX + x * (cieMaxX - cieOriginX);
-            double py = cieOriginY - y * (cieOriginY - cieMaxY);
+            //double px = cieOriginX + x * (cieMaxX - cieOriginX);
+            //double py = cieOriginY - y * (cieOriginY - cieMaxY);
+            //Point p = new Point(px, py);
+            Point p = MapXYToCanvas(x, y, W, H);
 
-            Point p = new Point(px, py);
+            cieBoundaryCanvas.Add(p);
 
             if (prev.HasValue)
             {
@@ -279,9 +294,139 @@ public partial class MainWindow : Window
             prev = p;
             prevLambda = s.Lambda;
         }
+
+        if (cieBoundaryCanvas.Count > 2)
+            cieBoundaryCanvas.Add(cieBoundaryCanvas[0]);
     }
+    
 
+    // --- Główna metoda generująca bitmapę diagramu chromatyczności ---
+    public void DrawChromaticityFill(Canvas canvas, GamutMapping mapping = GamutMapping.Normalize, int bitmapWidth = 800, int bitmapHeight = 800)
+    {
+        if (canvas == null) return;
 
+        double W = canvas.ActualWidth <= 0 ? bitmapWidth : canvas.ActualWidth;
+        double H = canvas.ActualHeight <= 0 ? bitmapHeight : canvas.ActualHeight;
+
+        double originX = 0.20 * W;
+        double originY = 0.82 * H;
+        double maxX    = 1.00 * W;
+        double maxY    = 0.01 * H;
+
+        int w = (int)Math.Max(1, W);
+        int h = (int)Math.Max(1, H);
+
+        var wb = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+        int stride = w * 4;
+        byte[] pixels = new byte[h * stride];
+
+        double invDx = 1.0 / (maxX - originX);
+        double invDy = 1.0 / (originY - maxY);
+
+        Parallel.For(0, h, py =>
+        {
+            int rowStart = py * stride;
+            for (int px = 0; px < w; px++)
+            {
+                double cx = originX + px;
+                double cy = py;
+
+                double x = (px - originX) * invDx;
+                double y = (originY - py) * invDy;
+
+                if (double.IsNaN(x) || double.IsNaN(y) || y <= 0 || x < -0.2 || x > 1.5 || y < -0.2 || y > 1.5)
+                {
+                    pixels[rowStart + px * 4 + 0] = 0;
+                    pixels[rowStart + px * 4 + 1] = 0;
+                    pixels[rowStart + px * 4 + 2] = 0;
+                    pixels[rowStart + px * 4 + 3] = 0;
+                    continue;
+                }
+
+                if (!PointInPolygon(cieBoundaryCanvas, px, py))
+                {
+                    int idx = rowStart + px * 4;
+                    pixels[idx + 3] = 0;
+                    continue;
+                }
+
+                var (r_lin, g_lin, b_lin) = ChromaticityToLinearSRGB(x, y, 1.0);
+
+                if (mapping == GamutMapping.Clip)
+                {
+                    r_lin = Math.Max(0.0, r_lin);
+                    g_lin = Math.Max(0.0, g_lin);
+                    b_lin = Math.Max(0.0, b_lin);
+
+                    r_lin = Math.Min(1.0, r_lin);
+                    g_lin = Math.Min(1.0, g_lin);
+                    b_lin = Math.Min(1.0, b_lin);
+                }
+                else 
+                {
+                    r_lin = Math.Max(0.0, r_lin);
+                    g_lin = Math.Max(0.0, g_lin);
+                    b_lin = Math.Max(0.0, b_lin);
+
+                    double maxv = Math.Max(r_lin, Math.Max(g_lin, b_lin));
+                    if (maxv > 0)
+                    {
+                        r_lin /= maxv;
+                        g_lin /= maxv;
+                        b_lin /= maxv;
+                    }
+                    else
+                    {
+                        pixels[rowStart + px * 4 + 0] = 0;
+                        pixels[rowStart + px * 4 + 1] = 0;
+                        pixels[rowStart + px * 4 + 2] = 0;
+                        pixels[rowStart + px * 4 + 3] = 0;
+                        continue;
+                    }
+                }
+
+                double r_srgb = GammaSRGB(r_lin);
+                double g_srgb = GammaSRGB(g_lin);
+                double b_srgb = GammaSRGB(b_lin);
+
+                byte R = ClampAndByte(r_srgb);
+                byte G = ClampAndByte(g_srgb);
+                byte B = ClampAndByte(b_srgb);
+
+                pixels[rowStart + px * 4 + 0] = B;
+                pixels[rowStart + px * 4 + 1] = G;
+                pixels[rowStart + px * 4 + 2] = R;
+                pixels[rowStart + px * 4 + 3] = 255;
+            }
+        });
+
+        Int32Rect rect = new Int32Rect(0, 0, w, h);
+        wb.WritePixels(rect, pixels, stride, 0);
+
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var img = new System.Windows.Controls.Image
+            {
+                Source = wb,
+                Width = w,
+                Height = h,
+                Stretch = Stretch.Fill,
+                IsHitTestVisible = false
+            };
+
+            Canvas.SetLeft(img, 0);
+            Canvas.SetTop(img, 0);
+
+            for (int i = canvas.Children.Count - 1; i >= 0; i--)
+            {
+                if (canvas.Children[i] is System.Windows.Controls.Image oldImg && oldImg.Tag as string == "ChromaticityFill")
+                    canvas.Children.RemoveAt(i);
+            }
+
+            img.Tag = "ChromaticityFill";
+            canvas.Children.Insert(0, img);
+        });
+    }
 
     
     private void ComputeCieTransform(Canvas canvas, out double originX, out double originY, out double maxX, out double maxY)
@@ -293,35 +438,31 @@ public partial class MainWindow : Window
         originY = 0.82 * H;
         maxX    = 1.00 * W;
         maxY    = 0.01 * H;
-
     }
+    
 
-    // Mapuje (x,y) chromatyczności (w zakresie 0..1) na współrzędne piksela canvasu
+
     private Point MapChromaticityToPixel(double x, double y, Canvas canvas)
     {
         ComputeCieTransform(canvas, out double originX, out double originY, out double maxX, out double maxY);
 
         double px = originX + x * (maxX - originX);
-        double py = originY - y * (originY - maxY); // minus bo y rośnie w górę w układzie CIE, ale w dół w pikselach
+        double py = originY - y * (originY - maxY);
         return new Point(px, py);
     }
 
     private void DrawSRGBGamut(Canvas canvas)
     {
-        // usuń ewentualne stare elementy związane tylko z gamutem,
-        // lub po prostu dopisz – tutaj dodajemy nowe elementy
         double w = canvas.ActualWidth;
         double h = canvas.ActualHeight;
         if (w <= 0 || h <= 0) return;
 
-        // punkty gamutu sRGB w współrzędnych chromatyczności
-        var rgb = new[] {
+        var rgb = new[] { // czy ok?
             (x:0.640, y:0.330),
             (x:0.300, y:0.600),
             (x:0.150, y:0.060)
         };
 
-        // utwórz polygon i wypełnienie
         var polygon = new Polygon
         {
             Stroke = Brushes.Gray,
@@ -338,40 +479,21 @@ public partial class MainWindow : Window
 
         canvas.Children.Add(polygon);
 
-        // Whitepoint D65
-        var wp = (x:0.3127, y:0.3290);
-        var wpMarker = new Ellipse { Width=6, Height=6, Fill=Brushes.White, Stroke=Brushes.Black, StrokeThickness=1, IsHitTestVisible = false };
+        var wp = (x:0.3127, y:0.3290); // Whitepoint D65
+        var wpMarker = new Ellipse
+        {
+            Width=6, 
+            Height=6, 
+            Fill=Brushes.White, 
+            Stroke=Brushes.Black, 
+            StrokeThickness=1, 
+            IsHitTestVisible = false
+        };
         var wpPixel = MapChromaticityToPixel(wp.x, wp.y, canvas);
         Canvas.SetLeft(wpMarker, wpPixel.X - wpMarker.Width / 2);
         Canvas.SetTop (wpMarker, wpPixel.Y - wpMarker.Height / 2);
         canvas.Children.Add(wpMarker);
     }
-
-
-    private void SetBackgroundFromResource(string resourcePath)
-    {
-        try
-        {
-            var uri = new Uri(resourcePath, UriKind.Relative);
-            var bi = new BitmapImage(uri);
-
-            var brush = new ImageBrush(bi)
-            {
-                Stretch = Stretch.Fill, // zachowuje proporcje
-                AlignmentX = AlignmentX.Center,
-                AlignmentY = AlignmentY.Center,
-                Opacity = 1 // przezroczystość
-            };
-
-            myCanvas.Background = brush;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Nie udało się ustawić tła: {ex.Message}");
-        }
-    }
-
-
  
    
     private void UpdateChromaticityFromCurve(Func<double, double> intensity)
@@ -395,22 +517,29 @@ public partial class MainWindow : Window
     
     public Color ChromaticityToSRGBColor(double x, double y, double Y = 1.0)
     {
-        // 1. Rekonstrukcja XYZ z (x,y,Y)
         if (y <= 0) return Color.FromRgb(0, 0, 0); 
         double X = (x / y) * Y;
         double Z = ((1 - x - y) / y) * Y;
 
-        // 2. XYZ → Linear sRGB
         double r_lin =  3.2406 * X - 1.5372 * Y - 0.4986 * Z;
         double g_lin = -0.9689 * X + 1.8758 * Y + 0.0415 * Z;
         double b_lin =  0.0557 * X - 0.2040 * Y + 1.0570 * Z;
+        
+        r_lin = Math.Max(0, r_lin);
+        g_lin = Math.Max(0, g_lin);
+        b_lin = Math.Max(0, b_lin);
+        
+        double max = Math.Max(r_lin, Math.Max(g_lin, b_lin));
+        if (max > 0)
+        {
+            r_lin /= max;
+            g_lin /= max;
+            b_lin /= max;
+        }
 
-        // 3. Korekta gamma sRGB (OETF) i konwersja na 8-bit
-    
-        // Korekcja gamma jest stosowana do wartości liniowych
-        double r_srgb = Gamma(r_lin);
-        double g_srgb = Gamma(g_lin);
-        double b_srgb = Gamma(b_lin);
+        double r_srgb = GammaSRGB(r_lin);
+        double g_srgb = GammaSRGB(g_lin);
+        double b_srgb = GammaSRGB(b_lin);
 
         return Color.FromRgb(
             ClampAndConvertToByte(r_srgb),
@@ -425,23 +554,6 @@ public partial class MainWindow : Window
         return (byte)Math.Round(clamped * 255.0);
     }
 
-    private double Gamma(double c)
-    {
-        if (c <= 0.0031308) return 12.92 * c;
-        return 1.055 * Math.Pow(c, 1.0 / 2.4) - 0.055;
-    }
-
-
-    private static byte ToSRGB8(double u)
-    {
-        // Jeśli u jest już po korekcji gamma, to tylko przypinamy i konwertujemy
-        // Twoja obecna funkcja ToSRGB8 wykonuje RÓWNIEŻ korekcję gamma, co jest BŁĘDEM
-    
-        // Zastąp starą implementację ToSRGB8 tą uproszczoną:
-        double v = Math.Clamp(u, 0.0, 1.0);
-        return (byte)Math.Round(v * 255.0);
-    }
-
     private void DrawColorPatch(Color c)
     {
         colorPatch.Fill = new SolidColorBrush(c);
@@ -454,7 +566,54 @@ public partial class MainWindow : Window
     }
     
     
+    
+    private double GammaSRGB(double c)
+    {
+        if (c <= 0.0031308) return 12.92 * c;
+        return 1.055 * Math.Pow(c, 1.0 / 2.4) - 0.055;
+    }
+
+    private static byte ClampAndByte(double v)
+    {
+        double c = Math.Clamp(v, 0.0, 1.0);
+        return (byte)Math.Round(c * 255.0);
+    }
+
+    // Zamienia (x,y,Y) -> linear RGB (bez gamma)
+    private (double r, double g, double b) ChromaticityToLinearSRGB(double x, double y, double Y = 1.0)
+    {
+        if (y <= 0) return (0, 0, 0);
+        double X = (x / y) * Y;
+        double Z = ((1 - x - y) / y) * Y;
+
+        double r_lin =  3.2406 * X - 1.5372 * Y - 0.4986 * Z;
+        double g_lin = -0.9689 * X + 1.8758 * Y + 0.0415 * Z;
+        double b_lin =  0.0557 * X - 0.2040 * Y + 1.0570 * Z;
+
+        return (r_lin, g_lin, b_lin);
+    }
 
 
+    
+    public static bool PointInPolygon(List<Point> poly, double x, double y)
+    {
+        bool inside = false;
+        int count = poly.Count;
 
+        for (int i = 0, j = count - 1; i < count; j = i++)
+        {
+            var pi = poly[i];
+            var pj = poly[j];
+
+            bool intersect = 
+                ((pi.Y > y) != (pj.Y > y)) &&
+                (x < (pj.X - pi.X) * (y - pi.Y) / (pj.Y - pi.Y) + pi.X);
+
+            if (intersect)
+                inside = !inside;
+        }
+        return inside;
+    }
+
+    
 }

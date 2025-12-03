@@ -62,7 +62,6 @@ namespace ChromaticityDiagram
             draggedDot.CaptureMouse();
             dragStartCanvasPos = e.GetPosition(canvas);
 
-            // znajdź indeks punktu najbliższego klikniętemu kółku
             double x = Canvas.GetLeft(draggedDot) + draggedDot.Width / 2;
             double y = Canvas.GetTop (draggedDot) + draggedDot.Height / 2;
 
@@ -86,7 +85,6 @@ namespace ChromaticityDiagram
             Canvas.SetLeft(draggedDot, Canvas.GetLeft(draggedDot) + dx);
             Canvas.SetTop (draggedDot, Canvas.GetTop (draggedDot) + dy);
 
-            // i odpowiadający wpis w controlPoints
             if (draggedIndex >= 0 && draggedIndex < controlPoints.Count)
             {
                 double cx = Canvas.GetLeft(draggedDot) + draggedDot.Width / 2;
@@ -94,7 +92,6 @@ namespace ChromaticityDiagram
                 controlPoints[draggedIndex] = new Point(cx, cy);
             }
 
-            // przerysuj krzywą (gładko, dynamicznie)
             Redraw();
             RaiseChromaticityRequested();
         }
@@ -144,7 +141,6 @@ namespace ChromaticityDiagram
             double w = canvas.ActualWidth, h = canvas.ActualHeight;
             if (w <= 0 || h <= 0) return;
 
-            // Rama
             var rect = new Rectangle
             {
                 Width = w - 2,
@@ -155,9 +151,6 @@ namespace ChromaticityDiagram
             Canvas.SetLeft(rect, 1);
             Canvas.SetTop(rect, 1);
             canvas.Children.Add(rect);
-
-            // Podpisy osi możesz dodać jako TextBlock jeśli chcesz
-            // (λ [nm] poziomo, Intensywność 0..1 pionowo).
         }
 
 
@@ -168,26 +161,21 @@ namespace ChromaticityDiagram
 
             if (controlPoints.Count == 0) return;
 
-            // 1) Posortuj po X
             var pts = controlPoints.OrderBy(p => p.X).ToList();
 
             Path path;
 
             if (pts.Count >= 4)
             {
-                // 2) Krzywa Bezier: StartPoint pierwszy punkt
                 var fig = new PathFigure { StartPoint = pts[0], IsFilled = false, IsClosed = false };
 
-                // 3) PolyBezierSegment - wymaga wielokrotności 3 kolejnych punktów (poza startem)
-                //    Dla uproszczenia: bierzemy co 3 punkty jako kontrolne + końcowy.
                 var segmentsPoints = new List<Point>();
 
-                // Jeśli liczba punktów nie jest 3n+1, „dociągnij” ostatni segment powtarzając ostatni punkt
                 int remainder = (pts.Count - 1) % 3;
                 int needed = (remainder == 0) ? 0 : (3 - remainder);
                 var padded = pts.GetRange(1, pts.Count - 1).ToList();
                 for (int i = 0; i < needed; i++)
-                    padded.Add(pts[^1]); // dopadamy ostatnim
+                    padded.Add(pts[^1]);
 
                 segmentsPoints.AddRange(padded);
 
@@ -206,20 +194,18 @@ namespace ChromaticityDiagram
             }
             else
             {
-                // Fallback: Polyline (gdy za mało punktów do sensownej Beziera)
                 var poly = new Polyline
                 {
                     Stroke = CurveStroke,
                     StrokeThickness = CurveThickness
                 };
                 foreach (var p in pts) poly.Points.Add(p);
-                path = new Path { Stroke = Brushes.Transparent }; // tylko po to, by dodać później „dots”
+                path = new Path { Stroke = Brushes.Transparent };
                 canvas.Children.Add(poly);
             }
 
             canvas.Children.Add(path);
 
-            // Punkty kontrolne (kółka)
             if (ShowControlPoints)
             {
                 foreach (var p in pts)
@@ -237,15 +223,10 @@ namespace ChromaticityDiagram
             double width = Math.Max(1, canvas.ActualWidth);
             double height = Math.Max(1, canvas.ActualHeight);
 
-            // Wygeneruj próbki Y dla X=0..width z krzywej (renderowanej)
-            // Proste podejście: dla każdej kolumny X znajdź najbliższy punkt krzywej.
-            // Tu dla uproszczenia użyjemy punktów kontrolnych liniowo (możesz rozbudować o sample PathGeometry).
-
             var pts = controlPoints.OrderBy(p => p.X).ToList();
             if (pts.Count == 0)
                 return _ => 0.0;
 
-            // Liniowa interpolacja między sąsiadami (stabilne i szybkie)
             double YToIntensity(double y) => Math.Clamp(1.0 - (y / height), 0.0, 1.0);
             double LambdaToX(double lambda) => (lambda - LambdaMin) / (LambdaMax - LambdaMin) * width;
 
