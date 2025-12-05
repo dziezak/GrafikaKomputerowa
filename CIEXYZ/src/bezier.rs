@@ -18,9 +18,6 @@ pub fn bezier_point(control_points: &[(f32, f32)], t: f32) -> (f32, f32) {
 }
 
 
-
-
-
 /// Posortuj punkty po długości fali (x = λ)
 fn sort_by_lambda(points: &mut Vec<(f32, f32)>) {
     points.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
