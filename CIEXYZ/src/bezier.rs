@@ -68,7 +68,6 @@ pub fn evaluate_curve(control_points: &[(f32, f32)], lambda: f32) -> f32 {
         return 0.0;
     }
 
-    // pracujemy na sklonowanej, posortowanej kopii (ważne!)
     let mut pts = control_points.to_vec();
     sort_by_lambda(&mut pts);
 
@@ -76,12 +75,10 @@ pub fn evaluate_curve(control_points: &[(f32, f32)], lambda: f32) -> f32 {
     let x_max = 700.0f32;
     let lambda = lambda.clamp(x_min, x_max);
 
-    // Mało punktów → fallback liniowy
     if pts.len() < 4 {
         return linear_interp(&pts, lambda).clamp(0.0, 1.8);
     }
 
-    // Znajdź indeks segmentu i: x[i] <= λ <= x[i+1]
     let mut i = 0usize;
     for j in 0..pts.len() - 1 {
         if lambda <= pts[j + 1].0 {
@@ -91,13 +88,11 @@ pub fn evaluate_curve(control_points: &[(f32, f32)], lambda: f32) -> f32 {
         i = j;
     }
 
-    // Sąsiedzi dla Catmull–Rom z duplikacją brzegów
     let p0 = if i == 0 { pts[0] } else { pts[i - 1] };
     let p1 = pts[i];
     let p2 = pts[i + 1];
     let p3 = if i + 2 >= pts.len() { pts[pts.len() - 1] } else { pts[i + 2] };
 
-    // lokalny parametr t w [p1.x, p2.x]
     let denom = (p2.0 - p1.0);
     let t = if denom.abs() < f32::EPSILON {
         0.0
@@ -112,7 +107,6 @@ pub fn evaluate_curve(control_points: &[(f32, f32)], lambda: f32) -> f32 {
 
 
 /// Rysowanie i interakcja z wykresem krzywej Béziera
-/*
 pub fn draw_bezier_interactive(
     ui: &mut egui::Ui,
     control_points: &mut Vec<(f32, f32)>,
@@ -265,103 +259,5 @@ pub fn draw_bezier_interactive(
         }
     }
 }
-*/
-//krzywe:
-pub fn draw_bezier_interactive(
-    ui: &mut egui::Ui,
-    control_points: &mut Vec<(f32, f32)>,
-    dragging_idx: &mut Option<usize>,
-    max_points: usize,
-) {
-    let size = ui.available_size_before_wrap();
-    let (response, painter) = ui.allocate_painter(size, egui::Sense::click_and_drag());
-    let rect = response.rect;
 
-    let x_min = 380.0;
-    let x_max = 700.0;
-    let y_min = 0.0;
-    let y_max = 1.8;
-
-    let to_screen = |(x, y): (f32, f32)| {
-        let px = rect.min.x + ((x - x_min) / (x_max - x_min)) * rect.width();
-        let py = rect.max.y - ((y - y_min) / (y_max - y_min)) * rect.height();
-        egui::pos2(px, py)
-    };
-    let from_screen = |pos: egui::Pos2| {
-        let x = x_min + ((pos.x - rect.min.x) / rect.width()) * (x_max - x_min);
-        let y = y_min + ((rect.max.y - pos.y) / rect.height()) * (y_max - y_min);
-        (x.clamp(x_min, x_max), y.clamp(y_min, y_max))
-    };
-
-    // Siatka i osie
-    painter.rect_stroke(rect, 0.0, egui::Stroke::new(1.0, Color32::GRAY));
-    let font = FontId::monospace(11.0);
-    for tx in (380..=700).step_by(40) {
-        let p1 = to_screen((tx as f32, y_min));
-        let p2 = to_screen((tx as f32, y_max));
-        painter.line_segment([p1, p2], (1.0, Color32::from_gray(50)));
-        painter.text(p1, Align2::LEFT_BOTTOM, format!("{}", tx), font.clone(), Color32::LIGHT_GRAY);
-    }
-    for ty in [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8] {
-        let p1 = to_screen((x_min, ty));
-        let p2 = to_screen((x_max, ty));
-        painter.line_segment([p1, p2], (1.0, Color32::from_gray(50)));
-        painter.text(p1, Align2::LEFT_TOP, format!("{:.1}", ty), font.clone(), Color32::LIGHT_GRAY);
-    }
-
-    // Obsługa kliknięć
-    if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
-        let primary_down = ui.input(|i| i.pointer.button_down(PointerButton::Primary));
-        let primary_clicked = ui.input(|i| i.pointer.primary_clicked());
-        let secondary_clicked = ui.input(|i| i.pointer.button_clicked(PointerButton::Secondary));
-        let primary_released = ui.input(|i| i.pointer.button_released(PointerButton::Primary));
-
-        // Drag & drop
-        if primary_down && dragging_idx.is_none() {
-            for (idx, &(x, y)) in control_points.iter().enumerate() {
-                if (to_screen((x, y)).distance(pos)) < 8.0 {
-                    *dragging_idx = Some(idx);
-                    break;
-                }
-            }
-        }
-        if primary_down {
-            if let Some(idx) = *dragging_idx {
-                control_points[idx] = from_screen(pos);
-            }
-        }
-        if primary_released {
-            *dragging_idx = None;
-        }
-
-        // Dodawanie punktu lewym kliknięciem
-        if primary_clicked && control_points.len() < max_points {
-            let clicked_on_handle = control_points.iter().any(|&(x, y)| to_screen((x, y)).distance(pos) < 8.0);
-            if !clicked_on_handle {
-                control_points.push(from_screen(pos));
-            }
-        }
-
-        // Usuwanie punktu prawym kliknięciem
-        if secondary_clicked {
-            if let Some(idx) = control_points.iter().position(|&(x, y)| to_screen((x, y)).distance(pos) < 8.0) {
-                control_points.remove(idx);
-            }
-        }
-    }
-
-    // Punkty
-    for &(x, y) in control_points.iter() {
-        let sp = to_screen((x, y));
-        painter.circle_filled(sp, 4.0, Color32::RED);
-        painter.circle_stroke(sp, 6.0, egui::Stroke::new(1.0, Color32::WHITE));
-    }
-
-    // Krzywa (łączymy punkty linią)
-    if control_points.len() >= 2 {
-        for i in 0..control_points.len() - 1 {
-            painter.line_segment([to_screen(control_points[i]), to_screen(control_points[i + 1])], (2.0, Color32::GREEN));
-        }
-    }
-}
 

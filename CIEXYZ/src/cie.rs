@@ -13,6 +13,11 @@ pub fn xyz_to_srgb(X: f32, Y: f32, Z: f32) -> (u8, u8, u8) {
     let g_lin = -0.9689 * X + 1.8758 * Y + 0.0415 * Z;
     let b_lin = 0.0557 * X - 0.2040 * Y + 1.0570 * Z;
 
+    let max_lin = r_lin.max(g_lin).max(b_lin).max(1.0);
+    let r_lin = r_lin / max_lin;
+    let g_lin = g_lin / max_lin;
+    let b_lin = b_lin / max_lin;
+
     fn gamma_correct(c: f32) -> f32 {
         if c <= 0.0031308 {
             12.92 * c

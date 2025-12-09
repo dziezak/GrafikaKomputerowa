@@ -4,13 +4,9 @@ mod renderer;
 mod bezier;
 
 use eframe::egui::{self, TextureFilter};
-use eframe::glow::Texture;
 use egui::TextureHandle;
 use data_loader::load_xyz_data;
 use cie::xyz_to_xy;
-use renderer::draw_chromaticity;
-use crate::bezier::evaluate_curve;
-use crate::cie::xyz_to_srgb;
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions::default();
@@ -77,82 +73,6 @@ impl Default for MyApp {
         }
     }
 }
-
-impl MyApp {
-
-
-    fn compute_color_from_bezier(&self) -> ((f32, f32), (u8, u8, u8)) {
-        let mut X = 0.0;
-        let mut Y = 0.0;
-        let mut Z = 0.0;
-        let mut total_intensity = 0.0;
-
-        if let Ok(xyz_data) = load_xyz_data("src/assets/data.txt") {
-            for (wl, x_bar, y_bar, z_bar) in xyz_data {
-                if wl >= 380.0 && wl <= 700.0 {
-                    let intensity = bezier::evaluate_curve(&self.control_points, wl);
-                    total_intensity += intensity;
-
-                    X += intensity * x_bar;
-                    Y += intensity * y_bar;
-                    Z += intensity * z_bar;
-                }
-            }
-        }
-
-        if total_intensity > 0.0 {
-            X /= total_intensity;
-            Y /= total_intensity;
-            Z /= total_intensity;
-        }
-
-        let sum = X + Y + Z;
-        if sum > 0.0 {
-            X /= sum;
-            Y /= sum;
-            Z /= sum;
-        }
-
-        let xy = (X, Y);
-        let rgb = cie::xyz_to_srgb(X, Y, Z);
-        (xy, rgb)
-    }
-
-
-
-    fn compute_color_from_curve(&self) -> ((f32, f32), (u8, u8, u8)) {
-        let mut X = 0.0;
-        let mut Y = 0.0;
-        let mut Z = 0.0;
-        let mut total_intensity = 0.0;
-
-        for (wl, x_bar, y_bar, z_bar) in &self.xyz_samples {
-            if *wl >= 380.0 && *wl <= 700.0 {
-                let p = evaluate_curve(&self.control_points, *wl);
-                total_intensity += p;
-                X += p * *x_bar;
-                Y += p * *y_bar;
-                Z += p * *z_bar;
-            }
-        }
-
-        if total_intensity > 0.0 {
-            X /= total_intensity;
-            Y /= total_intensity;
-            Z /= total_intensity;
-        }
-
-        let sum = X + Y + Z;
-        let (x_chr, y_chr) = if sum > 0.0 { (X / sum, Y / sum) } else { (0.0, 0.0) };
-
-        let rgb = xyz_to_srgb(X, Y, Z);
-        ((x_chr, y_chr), rgb)
-    }
-
-
-}
-
-
 
 impl eframe::App for MyApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -221,12 +141,198 @@ impl eframe::App for MyApp {
     }
 }
 
-
-
-
-
-
 impl MyApp {
+    /// Sample krzywej co 5 nm, zintergrowane do XYZ, zamienione na xy,
+    /// przycięte do trójkąta sRGB, a następnie przeliczone z powrotem na XYZ i sRGB.
+    pub fn compute_color_from_curve(&self) -> ((f32, f32), (u8, u8, u8)) {
+        let mut X = 0.0f32;
+        let mut Y = 0.0f32;
+        let mut Z = 0.0f32;
+        let mut total_intensity = 0.0f32;
+
+        // sample co 5 nm od 380 do 700
+        for wl in (380..=700).step_by(5) {
+            let wl_f = wl as f32;
+            let intensity = bezier::evaluate_curve(&self.control_points, wl_f);
+            if intensity <= 0.0 {
+                continue;
+            }
+
+            let (x_bar, y_bar, z_bar) = self.xyz_at_wavelength(wl_f);
+            X += intensity * x_bar;
+            Y += intensity * y_bar;
+            Z += intensity * z_bar;
+            total_intensity += intensity;
+        }
+
+        // jeśli nic nie ma → czarny
+        if total_intensity == 0.0 {
+            return ((0.0, 0.0), (0, 0, 0));
+        }
+
+        // normalizacja względem sumy intensywności (da względne XYZ)
+        X /= total_intensity;
+        Y /= total_intensity;
+        Z /= total_intensity;
+
+        // konwersja do chromatyczności xy
+        let sum = X + Y + Z;
+        if sum <= 0.0 {
+            return ((0.0, 0.0), (0, 0, 0));
+        }
+        let x = X / sum;
+        let y = Y / sum;
+
+        // CLAMP XY DO TRÓJKĄTA SRGB (tu gwarantujemy, że punkt nie wyjdzie)
+        let (x_clamped, y_clamped) = self.clamp_xy_to_srgb_gamut(x, y);
+
+        // aby uzyskać RGB, przeliczamy z powrotem na XYZ używając Y (luminancji) znormalizowanego
+        // (Y trzymamy tak jak po normalizacji nad total_intensity)
+        let X2;
+        let Z2;
+        if y_clamped > 0.0 {
+            X2 = (x_clamped * Y) / y_clamped;
+            Z2 = ((1.0 - x_clamped - y_clamped) * Y) / y_clamped;
+        } else {
+            // zabezpieczenie przeciw dzieleniu przez zero - zwracamy czarny
+            return ((x_clamped, y_clamped), (0, 0, 0));
+        }
+
+        let rgb = cie::xyz_to_srgb(X2, Y, Z2);
+        ((x_clamped, y_clamped), rgb)
+    }
+
+    /// Interpolacja liniowa tablicy xyz_samples – zwraca (x_bar, y_bar, z_bar) dla podanej λ.
+    pub fn xyz_at_wavelength(&self, wl: f32) -> (f32, f32, f32) {
+        if self.xyz_samples.len() < 2 {
+            return (0.0, 0.0, 0.0);
+        }
+
+        // załóżmy, że xyz_samples są posortowane rosnąco po λ
+        // używamy bezpiecznego zakresu
+        for i in 0..self.xyz_samples.len().saturating_sub(1) {
+            let (w1, x1, y1, z1) = self.xyz_samples[i];
+            let (w2, x2, y2, z2) = self.xyz_samples[i + 1];
+
+            if wl >= w1 && wl <= w2 {
+                let denom = w2 - w1;
+                if denom.abs() < f32::EPSILON {
+                    return (x1, y1, z1);
+                }
+                let t = (wl - w1) / denom;
+                return (
+                    x1 + t * (x2 - x1),
+                    y1 + t * (y2 - y1),
+                    z1 + t * (z2 - z1),
+                );
+            }
+        }
+
+        // poza zakresem → zwróć ekstremum (najbliższy koniec)
+        let first = self.xyz_samples.first().unwrap();
+        let last = self.xyz_samples.last().unwrap();
+        if wl < first.0 {
+            (first.1, first.2, first.3)
+        } else {
+            (last.1, last.2, last.3)
+        }
+    }
+
+    // ----------------------
+    // Funkcje do clampowania xy do trójkąta sRGB
+    // ----------------------
+
+    /// Czy punkt p leży wewnątrz trójkąta ABC? (metoda barycentryczna)
+    pub fn point_in_triangle(
+        &self,
+        p: (f32, f32),
+        a: (f32, f32),
+        b: (f32, f32),
+        c: (f32, f32),
+    ) -> bool {
+        let (px, py) = p;
+        let (ax, ay) = a;
+        let (bx, by) = b;
+        let (cx, cy) = c;
+
+        let v0 = (cx - ax, cy - ay);
+        let v1 = (bx - ax, by - ay);
+        let v2 = (px - ax, py - ay);
+
+        let dot00 = v0.0 * v0.0 + v0.1 * v0.1;
+        let dot01 = v0.0 * v1.0 + v0.1 * v1.1;
+        let dot02 = v0.0 * v2.0 + v0.1 * v2.1;
+        let dot11 = v1.0 * v1.0 + v1.1 * v1.1;
+        let dot12 = v1.0 * v2.0 + v1.1 * v2.1;
+
+        let denom = dot00 * dot11 - dot01 * dot01;
+        if denom.abs() < f32::EPSILON {
+            return false; // zdegenerowany trójkąt
+        }
+        let inv_denom = 1.0 / denom;
+        let u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+        let v = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+
+        (u >= 0.0) && (v >= 0.0) && (u + v <= 1.0)
+    }
+
+    /// Projekcja punktu p na odcinek AB (z clampem t ∈ [0,1])
+    pub fn closest_point_on_segment(&self, p: (f32, f32), a: (f32, f32), b: (f32, f32)) -> (f32, f32) {
+        let (px, py) = p;
+        let (ax, ay) = a;
+        let (bx, by) = b;
+
+        let ab = (bx - ax, by - ay);
+        let ap = (px - ax, py - ay);
+
+        let ab_len2 = ab.0 * ab.0 + ab.1 * ab.1;
+        if ab_len2 == 0.0 {
+            return a; // odcinek zdegenerowany
+        }
+
+        let t = ((ap.0 * ab.0 + ap.1 * ab.1) / ab_len2).clamp(0.0, 1.0);
+        (ax + t * ab.0, ay + t * ab.1)
+    }
+
+    pub fn dist(&self, a: (f32, f32), b: (f32, f32)) -> f32 {
+        let dx = a.0 - b.0;
+        let dy = a.1 - b.1;
+        (dx * dx + dy * dy).sqrt()
+    }
+
+    /// Clamp xy to the sRGB triangle (return nearest point on triangle if outside)
+    pub fn clamp_xy_to_srgb_gamut(&self, x: f32, y: f32) -> (f32, f32) {
+        let r = (0.64f32, 0.33f32);
+        let g = (0.30f32, 0.60f32);
+        let b = (0.15f32, 0.06f32);
+        let p = (x, y);
+
+        if self.point_in_triangle(p, r, g, b) {
+            return p;
+        }
+
+        let c1 = self.closest_point_on_segment(p, r, g);
+        let c2 = self.closest_point_on_segment(p, g, b);
+        let c3 = self.closest_point_on_segment(p, b, r);
+
+        let mut best = c1;
+        let mut best_d = self.dist(p, c1);
+
+        let d2 = self.dist(p, c2);
+        if d2 < best_d {
+            best = c2;
+            best_d = d2;
+        }
+
+        let d3 = self.dist(p, c3);
+        if d3 < best_d {
+            best = c3;
+        }
+
+        best
+    }
+
+    // --- funkcja do ładowania tła (bez zmian) ---
     fn pick_and_load_bg(&mut self, ctx: &egui::Context) {
         if let Some(path) = rfd::FileDialog::new()
             .add_filter("Obrazy", &["png", "jpg", "jpeg"])
