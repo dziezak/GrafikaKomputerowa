@@ -284,7 +284,7 @@ impl MyApp {
 
         let denom = dot00 * dot11 - dot01 * dot01;
         if denom.abs() < f32::EPSILON {
-            return false; // zdegenerowany trójkąt
+            return false;
         }
         let inv_denom = 1.0 / denom;
         let u = (dot11 * dot02 - dot01 * dot12) * inv_denom;
@@ -303,7 +303,7 @@ impl MyApp {
 
         let ab_len2 = ab.0 * ab.0 + ab.1 * ab.1;
         if ab_len2 == 0.0 {
-            return a; // odcinek zdegenerowany
+            return a;
         }
 
         let t = ((ap.0 * ab.0 + ap.1 * ab.1) / ab_len2).clamp(0.0, 1.0);

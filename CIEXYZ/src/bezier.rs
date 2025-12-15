@@ -109,13 +109,11 @@ pub fn draw_bezier_interactive(
     let (response, painter) = ui.allocate_painter(size, egui::Sense::click_and_drag());
     let rect = response.rect;
 
-    // Zakresy osi
     let x_min = 380.0f32;
     let x_max = 700.0f32;
     let y_min = 0.0f32;
     let y_max = 1.8f32;
 
-    // Transformacje
     let to_screen = |(x, y): (f32, f32)| {
         let px = rect.min.x + ((x - x_min) / (x_max - x_min)) * rect.width();
         let py = rect.max.y - ((y - y_min) / (y_max - y_min)) * rect.height();
@@ -199,11 +197,8 @@ pub fn draw_bezier_interactive(
             *dragging_idx = None;
         }
 
-        if primary_clicked {
-            let clicked_on_handle = control_points.iter().any(|&(x, y)| {
-                let sp = to_screen((x, y));
-                (sp.x - pos.x).abs() <= pick_radius && (sp.y - pos.y).abs() <= pick_radius
-            });
+        if primary_clicked && rect.contains(pos) {
+            let clicked_on_handle = control_points.iter().any(|&(x, y)| to_screen((x, y)) == pos);
             if !clicked_on_handle {
                 if control_points.len() < max_points {
                     let (nx, ny) = from_screen(pos);
@@ -219,6 +214,7 @@ pub fn draw_bezier_interactive(
                 }
             }
         }
+
     }
 
     for &(x, y) in control_points.iter() {
@@ -264,7 +260,6 @@ pub fn draw_polyline(
         (x.clamp(x_min, x_max), y.clamp(y_min, y_max))
     };
 
-    // Siatka i osie
     painter.rect_stroke(rect, 0.0, egui::Stroke::new(1.0, Color32::GRAY));
     let font = FontId::monospace(11.0);
     for tx in (380..=700).step_by(40) {
@@ -280,14 +275,12 @@ pub fn draw_polyline(
         painter.text(p1, Align2::LEFT_TOP, format!("{:.1}", ty), font.clone(), Color32::LIGHT_GRAY);
     }
 
-    // Obsługa kliknięć
     if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
         let primary_down = ui.input(|i| i.pointer.button_down(PointerButton::Primary));
         let primary_clicked = ui.input(|i| i.pointer.primary_clicked());
         let secondary_clicked = ui.input(|i| i.pointer.button_clicked(PointerButton::Secondary));
         let primary_released = ui.input(|i| i.pointer.button_released(PointerButton::Primary));
 
-        // Drag & drop
         if primary_down && dragging_idx.is_none() {
             for (idx, &(x, y)) in control_points.iter().enumerate() {
                 if (to_screen((x, y)).distance(pos)) < 8.0 {
@@ -305,15 +298,14 @@ pub fn draw_polyline(
             *dragging_idx = None;
         }
 
-        // Dodawanie punktu lewym kliknięciem
-        if primary_clicked && control_points.len() < max_points {
-            let clicked_on_handle = control_points.iter().any(|&(x, y)| to_screen((x, y)).distance(pos) < 8.0);
+        if primary_clicked && rect.contains(pos) && control_points.len() < max_points {
+            let clicked_on_handle = control_points.iter().any(|&(x, y)| to_screen((x, y)) == pos);
             if !clicked_on_handle {
                 control_points.push(from_screen(pos));
             }
         }
 
-        // Usuwanie punktu prawym kliknięciem
+
         if secondary_clicked {
             if let Some(idx) = control_points.iter().position(|&(x, y)| to_screen((x, y)).distance(pos) < 8.0) {
                 control_points.remove(idx);
@@ -321,14 +313,12 @@ pub fn draw_polyline(
         }
     }
 
-    // Punkty
     for &(x, y) in control_points.iter() {
         let sp = to_screen((x, y));
         painter.circle_filled(sp, 4.0, Color32::RED);
         painter.circle_stroke(sp, 6.0, egui::Stroke::new(1.0, Color32::WHITE));
     }
 
-    // Krzywa (łączymy punkty linią)
     if control_points.len() >= 2 {
         for i in 0..control_points.len() - 1 {
             painter.line_segment([to_screen(control_points[i]), to_screen(control_points[i + 1])], (2.0, Color32::GREEN));
