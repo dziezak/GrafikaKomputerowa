@@ -2,11 +2,14 @@ mod data_loader;
 mod cie;
 mod renderer;
 mod bezier;
+mod serialization;
 
 use eframe::egui::{self, TextureFilter};
 use egui::TextureHandle;
 use data_loader::load_xyz_data;
 use cie::xyz_to_xy;
+use serde::{Serialize, Deserialize};
+use crate::serialization::MyAppState;
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions::default();
@@ -17,11 +20,16 @@ fn main() -> eframe::Result<()> {
     )
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 enum BgFitMode {
     Stretch,
     Contain,
     Cover,
+}
+impl Default for BgFitMode {
+    fn default() -> Self {
+        BgFitMode::Cover
+    }
 }
 
 struct MyApp {
@@ -136,7 +144,16 @@ impl eframe::App for MyApp {
                 if ui.button("łamana").clicked() {
                     self.curve = false;
                 }
-            });
+            ui.horizontal(|ui| {
+                    if ui.button("Zapisz stan…").clicked() {
+                        let _ = self.save_state("app_state.json");
+                    }
+                    if ui.button("Wczytaj stan…").clicked() {
+                        let _ = self.load_state("app_state.json");
+                    }
+                });
+
+        });
             ui.separator();
 
             if self.curve {
@@ -356,5 +373,43 @@ impl MyApp {
                 }
             }
         }
+    }
+}
+
+impl MyApp {
+    fn save_state(&self, path: &str) -> Result<(), std::io::Error> {
+        let state = MyAppState {
+            points: self.points.clone(),
+            wavelengths: self.wavelengths.clone(),
+            current_xy: self.current_xy,
+            current_rgb: self.current_rgb,
+            control_points: self.control_points.clone(),
+            max_points: self.max_points,
+            xyz_samples: self.xyz_samples.clone(),
+            bg_mode: self.bg_mode,
+            bg_opacity: self.bg_opacity,
+            curve: self.curve,
+        };
+
+        let json = serde_json::to_string_pretty(&state).unwrap();
+        std::fs::write(path, json)
+    }
+
+    fn load_state(&mut self, path: &str) -> Result<(), std::io::Error> {
+        let data = std::fs::read_to_string(path)?;
+        let state: MyAppState = serde_json::from_str(&data).unwrap();
+
+        self.points = state.points;
+        self.wavelengths = state.wavelengths;
+        self.current_xy = state.current_xy;
+        self.current_rgb = state.current_rgb;
+        self.control_points = state.control_points;
+        self.max_points = state.max_points;
+        self.xyz_samples = state.xyz_samples;
+        self.bg_mode = state.bg_mode;
+        self.bg_opacity = state.bg_opacity;
+        self.curve = state.curve;
+
+        Ok(())
     }
 }
