@@ -32,9 +32,9 @@ struct MyApp {
     current_rgb: (u8, u8, u8),
 
     // Prawy panel: krzywa Béziera (rozklad widmowy)
-    control_points: Vec<(f32, f32)>, // (λ in nm, I in [0..1.8])
-    dragging_idx: Option<usize>,      // który punkt aktualnie przesuwamy
-    max_points: usize,                // ograniczenie liczby punktów
+    control_points: Vec<(f32, f32)>,
+    dragging_idx: Option<usize>,
+    max_points: usize,
 
     // dane do wykresu ( gdzies trzeba o wczytac cn?)
     xyz_samples: Vec<(f32, f32, f32, f32)>,
@@ -43,6 +43,9 @@ struct MyApp {
     bg_texture: Option<TextureHandle>,
     bg_mode: BgFitMode,
     bg_opacity: f32,
+
+    //Laboaltoria
+    curve: bool,
 }
 
 
@@ -70,6 +73,7 @@ impl Default for MyApp {
             bg_texture: None,
             bg_mode: BgFitMode::Contain,
             bg_opacity: 0.35,
+            curve: true,
         }
     }
 }
@@ -80,7 +84,6 @@ impl eframe::App for MyApp {
         self.current_xy = xy;
         self.current_rgb = rgb;
 
-        // --- LEWY PANEL ---
         egui::SidePanel::left("left_panel")
             .resizable(true)
             .min_width(280.0)
@@ -118,7 +121,6 @@ impl eframe::App for MyApp {
                 ));
             });
 
-        // --- PRAWY PANEL wypełniający resztę przestrzeni ---
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Rozkład widmowy (Catmull–Rom spline)");
             ui.horizontal(|ui| {
@@ -128,22 +130,35 @@ impl eframe::App for MyApp {
                     self.control_points = vec![(400.0, 0.6), (500.0, 1.2), (620.0, 0.8)];
                     self.dragging_idx = None;
                 }
+                if ui.button("krzywa").clicked() {
+                    self.curve = true;
+                }
+                if ui.button("łamana").clicked() {
+                    self.curve = false;
+                }
             });
             ui.separator();
 
-            bezier::draw_bezier_interactive(
-                ui,
-                &mut self.control_points,
-                &mut self.dragging_idx,
-                self.max_points,
-            );
+            if self.curve {
+                bezier::draw_bezier_interactive(
+                    ui,
+                    &mut self.control_points,
+                    &mut self.dragging_idx,
+                    self.max_points,
+                );
+            } else {
+                bezier::draw_polyline(
+                    ui,
+                    &mut self.control_points,
+                    &mut self.dragging_idx,
+                    self.max_points,
+                );
+            }
         });
     }
 }
 
 impl MyApp {
-    /// Sample krzywej co 5 nm, zintergrowane do XYZ, zamienione na xy,
-    /// przycięte do trójkąta sRGB, a następnie przeliczone z powrotem na XYZ i sRGB.
     pub fn compute_color_from_curve(&self) -> ((f32, f32), (u8, u8, u8)) {
         let mut X = 0.0f32;
         let mut Y = 0.0f32;
@@ -165,17 +180,14 @@ impl MyApp {
             total_intensity += intensity;
         }
 
-        // jeśli nic nie ma → czarny
         if total_intensity == 0.0 {
             return ((0.0, 0.0), (0, 0, 0));
         }
 
-        // normalizacja względem sumy intensywności (da względne XYZ)
         X /= total_intensity;
         Y /= total_intensity;
         Z /= total_intensity;
 
-        // konwersja do chromatyczności xy
         let sum = X + Y + Z;
         if sum <= 0.0 {
             return ((0.0, 0.0), (0, 0, 0));
@@ -183,18 +195,14 @@ impl MyApp {
         let x = X / sum;
         let y = Y / sum;
 
-        // CLAMP XY DO TRÓJKĄTA SRGB (tu gwarantujemy, że punkt nie wyjdzie)
         let (x_clamped, y_clamped) = self.clamp_xy_to_srgb_gamut(x, y);
 
-        // aby uzyskać RGB, przeliczamy z powrotem na XYZ używając Y (luminancji) znormalizowanego
-        // (Y trzymamy tak jak po normalizacji nad total_intensity)
         let X2;
         let Z2;
         if y_clamped > 0.0 {
             X2 = (x_clamped * Y) / y_clamped;
             Z2 = ((1.0 - x_clamped - y_clamped) * Y) / y_clamped;
         } else {
-            // zabezpieczenie przeciw dzieleniu przez zero - zwracamy czarny
             return ((x_clamped, y_clamped), (0, 0, 0));
         }
 
@@ -202,14 +210,11 @@ impl MyApp {
         ((x_clamped, y_clamped), rgb)
     }
 
-    /// Interpolacja liniowa tablicy xyz_samples – zwraca (x_bar, y_bar, z_bar) dla podanej λ.
     pub fn xyz_at_wavelength(&self, wl: f32) -> (f32, f32, f32) {
         if self.xyz_samples.len() < 2 {
             return (0.0, 0.0, 0.0);
         }
 
-        // załóżmy, że xyz_samples są posortowane rosnąco po λ
-        // używamy bezpiecznego zakresu
         for i in 0..self.xyz_samples.len().saturating_sub(1) {
             let (w1, x1, y1, z1) = self.xyz_samples[i];
             let (w2, x2, y2, z2) = self.xyz_samples[i + 1];
@@ -228,7 +233,6 @@ impl MyApp {
             }
         }
 
-        // poza zakresem → zwróć ekstremum (najbliższy koniec)
         let first = self.xyz_samples.first().unwrap();
         let last = self.xyz_samples.last().unwrap();
         if wl < first.0 {
@@ -238,11 +242,7 @@ impl MyApp {
         }
     }
 
-    // ----------------------
-    // Funkcje do clampowania xy do trójkąta sRGB
-    // ----------------------
 
-    /// Czy punkt p leży wewnątrz trójkąta ABC? (metoda barycentryczna)
     pub fn point_in_triangle(
         &self,
         p: (f32, f32),
@@ -276,7 +276,6 @@ impl MyApp {
         (u >= 0.0) && (v >= 0.0) && (u + v <= 1.0)
     }
 
-    /// Projekcja punktu p na odcinek AB (z clampem t ∈ [0,1])
     pub fn closest_point_on_segment(&self, p: (f32, f32), a: (f32, f32), b: (f32, f32)) -> (f32, f32) {
         let (px, py) = p;
         let (ax, ay) = a;
@@ -300,7 +299,6 @@ impl MyApp {
         (dx * dx + dy * dy).sqrt()
     }
 
-    /// Clamp xy to the sRGB triangle (return nearest point on triangle if outside)
     pub fn clamp_xy_to_srgb_gamut(&self, x: f32, y: f32) -> (f32, f32) {
         let r = (0.64f32, 0.33f32);
         let g = (0.30f32, 0.60f32);
@@ -332,7 +330,6 @@ impl MyApp {
         best
     }
 
-    // --- funkcja do ładowania tła (bez zmian) ---
     fn pick_and_load_bg(&mut self, ctx: &egui::Context) {
         if let Some(path) = rfd::FileDialog::new()
             .add_filter("Obrazy", &["png", "jpg", "jpeg"])

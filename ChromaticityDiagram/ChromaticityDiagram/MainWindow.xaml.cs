@@ -26,7 +26,6 @@ public partial class MainWindow : Window
         InitializeComponent();
         DrawAxes();
         Loaded += OnLoad;
-        //myCanvas.SizeChanged += (_, __) => DrawChromaticityStuff();
         myCanvas.SizeChanged += (_, __) => DrawSpectrumCanvas(myCanvas, spectrum);
         myCanvas.SizeChanged += (_, __) => DrawChromaticityFill(myCanvas, GamutMapping.Clip);
     }

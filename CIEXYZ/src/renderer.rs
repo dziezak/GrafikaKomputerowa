@@ -53,53 +53,44 @@ pub fn draw_chromaticity(
     bg_mode: BgFitMode,
     bg_opacity: f32,
 ) {
-    // 1) Zarezerwuj dokładnie tyle miejsca, ile panel oferuje
     let size = ui.available_size();
     let (response, painter_root) = ui.allocate_painter(size, egui::Sense::hover());
     let rect = response.rect;
 
-    // 2) Dziedzina osi CIE xy + aspect ratio
     let x_min = 0.0f32;
     let x_max = 0.8f32;
     let y_min = 0.0f32;
     let y_max = 0.9f32;
     let domain_aspect = (x_max - x_min) / (y_max - y_min); // ≈ 0.8889
 
-    // 3) Marginesy wewnątrz panelu (miejsce na etykiety osi / legendę)
-    let margin = egui::vec2(48.0, 36.0); // lewy/dolny margines na opisy osi
+    let margin = egui::vec2(48.0, 36.0);
     let inner = egui::Rect::from_min_max(
         rect.min + egui::vec2(margin.x, margin.y * 0.5),
         rect.max - egui::vec2(margin.x * 0.6, margin.y),
     );
 
-    // 4) Dopasuj wykres do aspect ratio domeny (fit-in)
     let inner_w = inner.width();
     let inner_h = inner.height();
     let inner_aspect = inner_w / inner_h;
 
     let plot_rect = if inner_aspect > domain_aspect {
-        // za szeroki → dopasuj szerokość do wysokości
         let w = inner_h * domain_aspect;
         let x = inner.center().x - w * 0.5;
         egui::Rect::from_min_size(egui::pos2(x, inner.min.y), egui::vec2(w, inner_h))
     } else {
-        // za wysoki → dopasuj wysokość do szerokości
         let h = inner_w / domain_aspect;
         let y = inner.center().y - h * 0.5;
         egui::Rect::from_min_size(egui::pos2(inner.min.x, y), egui::vec2(inner_w, h))
     };
 
-    // Painter z klipem do plot_rect
     let painter = painter_root.with_clip_rect(plot_rect);
 
-    // Funkcje mapujące (tylko w obrębie plot_rect)
     let to_screen = |(x, y): (f32, f32)| {
         let px = plot_rect.min.x + ((x - x_min) / (x_max - x_min)) * plot_rect.width();
         let py = plot_rect.max.y - ((y - y_min) / (y_max - y_min)) * plot_rect.height();
         egui::pos2(px, py)
     };
 
-    // === 5) TŁO (obraz) — klipowane do plot_rect
     if let Some(tex) = bg_texture {
         let [tw, th] = tex.size();
         let tw = tw as f32;
@@ -112,10 +103,8 @@ pub fn draw_chromaticity(
 
         match bg_mode {
             BgFitMode::Stretch => {
-                // target = plot_rect, uv = pełne → zniekształca, ale pokrywa całość
             }
             BgFitMode::Contain => {
-                // Dopasuj z zachowaniem proporcji (mogą pojawić się „pasy”)
                 let scale = (plot_rect.width() / tw).min(plot_rect.height() / th);
                 let w = tw * scale;
                 let h = th * scale;
@@ -124,15 +113,12 @@ pub fn draw_chromaticity(
                 target = egui::Rect::from_min_size(egui::pos2(x, y), egui::vec2(w, h));
             }
             BgFitMode::Cover => {
-                // Wypełnij cały wykres, przytnij UV
                 if rect_aspect > tex_aspect {
-                    // wykres szerszy → przytnij w pionie (V)
                     let new_v = tex_aspect / rect_aspect;
                     let v_margin = (1.0 - new_v) * 0.5;
                     uv.min.y = v_margin;
                     uv.max.y = 1.0 - v_margin;
                 } else {
-                    // wykres wyższy → przytnij w poziomie (U)
                     let new_u = rect_aspect / tex_aspect;
                     let u_margin = (1.0 - new_u) * 0.5;
                     uv.min.x = u_margin;
@@ -148,7 +134,6 @@ pub fn draw_chromaticity(
         painter.image(tex.id(), target, uv, tint);
     }
 
-    // === 6) Siatka, osie, etykiety — na plot_rect
     painter.rect_stroke(plot_rect, 0.0, egui::Stroke::new(1.0, Color32::GRAY));
 
     let font = FontId::monospace(11.0);
@@ -161,7 +146,6 @@ pub fn draw_chromaticity(
         let p1 = to_screen((tx, y_min));
         let p2 = to_screen((tx, y_max));
         painter.line_segment([p1, p2], (1.0, grid_color));
-        // etykiety osi X pod wykresem (poza klipem, więc użyj painter_root):
         painter_root.text(
             egui::pos2(p1.x, plot_rect.max.y + 14.0),
             Align2::CENTER_CENTER,
@@ -174,7 +158,6 @@ pub fn draw_chromaticity(
         let p1 = to_screen((x_min, ty));
         let p2 = to_screen((x_max, ty));
         painter.line_segment([p1, p2], (1.0, grid_color));
-        // etykiety osi Y z lewej (poza klipem — painter_root):
         painter_root.text(
             egui::pos2(plot_rect.min.x - 18.0, p1.y),
             Align2::RIGHT_CENTER,
@@ -184,7 +167,6 @@ pub fn draw_chromaticity(
         );
     }
 
-    // Opisy osi
     painter_root.text(
         egui::pos2(plot_rect.center().x, plot_rect.max.y + 32.0),
         Align2::CENTER_CENTER,
@@ -200,13 +182,11 @@ pub fn draw_chromaticity(
         Color32::WHITE,
     );
 
-    // === 7) Brzeg podkowy (kolorowy)
     for ((x, y), wl) in points.iter().zip(wavelengths.iter()) {
         let color = wavelength_to_rgb(*wl);
         painter.circle_filled(to_screen((*x, *y)), 2.0, color);
     }
 
-    // === 8) Trójkąt gamutu sRGB
     let srgb = [(0.64, 0.33), (0.30, 0.60), (0.15, 0.06)];
     for i in 0..3 {
         let p1 = to_screen(srgb[i]);
@@ -214,12 +194,10 @@ pub fn draw_chromaticity(
         painter.line_segment([p1, p2], (2.0, Color32::WHITE));
     }
 
-    // === 9) Punkt wynikowy + próbka koloru
     let xy_screen = to_screen(current_xy);
     painter.circle_filled(xy_screen, 5.5, Color32::BLACK);
     painter.circle_stroke(xy_screen, 7.5, egui::Stroke::new(1.0, Color32::WHITE));
 
-    // próbka koloru (poza klipem — painter_root)
     let sample_rect = egui::Rect::from_min_size(
         egui::pos2(plot_rect.max.x - 86.0, plot_rect.min.y + 10.0),
         egui::vec2(70.0, 40.0),
@@ -238,7 +216,6 @@ pub fn draw_chromaticity(
         Color32::WHITE,
     );
 
-    // 10) Zewnętrzna ramka (obszar panelu) — opcjonalnie
     painter_root.rect_stroke(rect, 0.0, egui::Stroke::new(1.0, Color32::from_gray(150)));
 }
 
