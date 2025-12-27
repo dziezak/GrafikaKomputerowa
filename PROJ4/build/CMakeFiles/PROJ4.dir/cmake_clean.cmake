@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj"
+  "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj"
   "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/glad.c.obj"

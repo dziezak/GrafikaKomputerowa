@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(PROJ4
     src/main.cpp
     src/Shader.cpp
+    src/Object3D.cpp
     src/glad.c
 )
 
@@ -22,3 +23,4 @@ target_link_libraries(PROJ4
     C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/lib/libglm.a
     opengl32
 )
+

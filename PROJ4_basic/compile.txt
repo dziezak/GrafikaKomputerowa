@@ -1,0 +1,2 @@
+# info dla mnie jakbym zapomnial, ze wszytsko jest juz ogarniete tak aby wpisac tylko:
+mingw32-make

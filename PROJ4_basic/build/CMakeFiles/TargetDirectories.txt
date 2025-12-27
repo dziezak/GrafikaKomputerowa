@@ -1,0 +1,3 @@
+C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/build/CMakeFiles/PROJ4.dir
+C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/build/CMakeFiles/edit_cache.dir
+C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/build/CMakeFiles/rebuild_cache.dir

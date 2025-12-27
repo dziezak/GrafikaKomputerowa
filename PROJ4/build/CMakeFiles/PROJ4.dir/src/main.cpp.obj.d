@@ -266,46 +266,6 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_transform.hpp \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_transform.inl \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/matrix_transform.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/type_ptr.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/quaternion.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_relational.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_relational.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/type_float.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_common.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_geometric.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_geometric.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_common.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_float.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/type_quat.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_relational.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_relational.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/type_quat.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_float_precision.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_double.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_double_precision.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_trigonometric.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_trigonometric.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_transform.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/quaternion_transform.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/quaternion.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/epsilon.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/setup.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/epsilon.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/vec1.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_bool1.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_bool1_precision.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_float1.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_float1_precision.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_double1.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_double1_precision.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_int1.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_int1_sized.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_uint1.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/vector_uint1_sized.hpp \
- C:/Strawberry/c/include/c++/13.2.0/cstring \
- C:/Strawberry/c/x86_64-w64-mingw32/include/string.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/sec_api/string_s.h \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/type_ptr.inl \
  C:/Strawberry/c/include/c++/13.2.0/iostream \
  C:/Strawberry/c/include/c++/13.2.0/ostream \
  C:/Strawberry/c/include/c++/13.2.0/ios \
@@ -380,4 +340,15 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:/Strawberry/c/include/c++/13.2.0/bits/ostream.tcc \
  C:/Strawberry/c/include/c++/13.2.0/istream \
  C:/Strawberry/c/include/c++/13.2.0/bits/istream.tcc \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Shader.h
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Shader.h \
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Object3D.h \
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\stb_image.h \
+ C:/Strawberry/c/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdarg.h \
+ C:/Strawberry/c/x86_64-w64-mingw32/include/stdarg.h \
+ C:/Strawberry/c/x86_64-w64-mingw32/include/_mingw_stdarg.h \
+ C:/Strawberry/c/x86_64-w64-mingw32/include/string.h \
+ C:/Strawberry/c/x86_64-w64-mingw32/include/sec_api/string_s.h \
+ C:/Strawberry/c/include/c++/13.2.0/math.h \
+ C:/Strawberry/c/lib/gcc/x86_64-w64-mingw32/13.2.0/include/emmintrin.h \
+ C:/Strawberry/c/lib/gcc/x86_64-w64-mingw32/13.2.0/include/xmmintrin.h \
+ C:/Strawberry/c/lib/gcc/x86_64-w64-mingw32/13.2.0/include/mmintrin.h

@@ -128,6 +128,30 @@ PROJ4/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/build
 .PHONY : PROJ4/fast
 
+src/Object3D.obj: src/Object3D.cpp.obj
+.PHONY : src/Object3D.obj
+
+# target to build an object file
+src/Object3D.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj
+.PHONY : src/Object3D.cpp.obj
+
+src/Object3D.i: src/Object3D.cpp.i
+.PHONY : src/Object3D.i
+
+# target to preprocess a source file
+src/Object3D.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Object3D.cpp.i
+.PHONY : src/Object3D.cpp.i
+
+src/Object3D.s: src/Object3D.cpp.s
+.PHONY : src/Object3D.s
+
+# target to generate assembly for a file
+src/Object3D.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Object3D.cpp.s
+.PHONY : src/Object3D.cpp.s
+
 src/Shader.obj: src/Shader.cpp.obj
 .PHONY : src/Shader.obj
 
@@ -209,6 +233,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... PROJ4
+	@echo ... src/Object3D.obj
+	@echo ... src/Object3D.i
+	@echo ... src/Object3D.s
 	@echo ... src/Shader.obj
 	@echo ... src/Shader.i
 	@echo ... src/Shader.s
