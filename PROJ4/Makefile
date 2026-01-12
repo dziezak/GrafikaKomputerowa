@@ -1,4 +1,3 @@
-# Makefile dla projektu PROJ4
 
 BUILD_DIR = build
 EXEC = $(BUILD_DIR)/PROJ4.exe
@@ -20,10 +19,12 @@ copy_shaders:
 	@echo "Kopiowanie shaderów..."
 	@mkdir -p $(SHADERS_DST)
 	@cp -r $(SHADERS_SRC)/* $(SHADERS_DST)/
+	@echo "Kopiowanie tekstur..."
+	@cp wall.jpg $(BUILD_DIR)/
 
 run:
 	@echo "Uruchamianie PROJ4..."
-	@cd $(BUILD_DIR) && ./PROJ4.exe
+	@cd $(BUILD_DIR) && PROJ4.exe
 
 clean:
 	@echo "Czyszczenie..."

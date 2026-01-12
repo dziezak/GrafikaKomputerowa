@@ -3,12 +3,10 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <filesystem>
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {
-    // ======================
-    // 1. Wczytanie plików
-    // ======================
     std::string vertexCode;
     std::string fragmentCode;
 
@@ -17,11 +15,16 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
 
     vShaderFile.open(vertexPath);
     fShaderFile.open(fragmentPath);
+    std::cout<<"Vertex path: "<<vertexPath<<'\n'<<" Fragment path: "<<'\n';
+    std::cout<<std::filesystem::current_path()<<'\n';
 
     if (!vShaderFile.is_open() || !fShaderFile.is_open())
     {
         std::cerr << "Nie mozna otworzyc plikow shaderow\n";
         return;
+    } 
+    else {
+        std::cout<<"pliki shaderow otwarte\n";
     }
 
     std::stringstream vStream, fStream;
@@ -37,9 +40,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     const char* vCode = vertexCode.c_str();
     const char* fCode = fragmentCode.c_str();
 
-    // ======================
-    // 2. Kompilacja shaderów
-    // ======================
     unsigned int vertex, fragment;
     int success;
     char infoLog[512];
@@ -66,9 +66,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
         std::cerr << "BLAD Fragment Shader:\n" << infoLog << std::endl;
     }
 
-    // ======================
-    // 3. Linkowanie programu
-    // ======================
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);

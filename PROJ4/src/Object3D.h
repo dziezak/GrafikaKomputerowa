@@ -19,7 +19,7 @@ public:
     Object3D(
         float* vertices, unsigned int vertexCount,
         unsigned int* indices, unsigned int indexCount,
-        Shader* shader
+        Shader* shader, bool isTextured = false
     );
 
     ~Object3D();

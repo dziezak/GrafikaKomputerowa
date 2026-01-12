@@ -4,7 +4,8 @@
 Object3D::Object3D(
     float* vertices, unsigned int vertexCount,
     unsigned int* indices, unsigned int indexCount,
-    Shader* shader
+    Shader* shader,
+    bool isTextured
 )
     : shader(shader),
       position(0.0f),
@@ -19,35 +20,21 @@ Object3D::Object3D(
     glBindVertexArray(VAO);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        vertexCount * sizeof(float),
-        vertices,
-        GL_STATIC_DRAW
-    );
+    glBufferData(GL_ARRAY_BUFFER, vertexCount * sizeof(float), vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(
-        GL_ELEMENT_ARRAY_BUFFER,
-        indexCount * sizeof(unsigned int),
-        indices,
-        GL_STATIC_DRAW
-    );
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
-    // position
-    glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE,
-        6 * sizeof(float),
-        (void*)0
-    );
+    int stride = isTextured ? 5 : 6;
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // color
-    glVertexAttribPointer(
-        1, 3, GL_FLOAT, GL_FALSE,
-        6 * sizeof(float),
-        (void*)(3 * sizeof(float))
-    );
+    if (isTextured) {
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3 * sizeof(float)));
+    } else {
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride * sizeof(float), (void*)(3 * sizeof(float)));
+    }
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
