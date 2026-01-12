@@ -35,7 +35,7 @@ unsigned int cubeIndicesForCube[] = {
     1,5,6, 6,2,1, 3,2,6, 6,7,3, 0,1,5, 5,4,0
 };
 
-void generateSphere(float radius, unsigned int sectorCount, unsigned int stackCount,
+void generateSphere_orginal(float radius, unsigned int sectorCount, unsigned int stackCount,
                     std::vector<float>& vertices, std::vector<unsigned int>& indices) {
     float x, y, z, xy;
     float sectorStep = 2 * M_PI / sectorCount;
@@ -60,8 +60,42 @@ void generateSphere(float radius, unsigned int sectorCount, unsigned int stackCo
     }
 }
 
+void generateSphere(float radius, unsigned int sectorCount, unsigned int stackCount,
+                    std::vector<float>& vertices, std::vector<unsigned int>& indices) {
+    vertices.clear();
+    indices.clear();
+    float x, y, z, xy;
+    float nx, ny, nz, lengthInv = 1.0f / radius;
+    float sectorStep = 2 * M_PI / sectorCount;
+    float stackStep = M_PI / stackCount;
+
+    for(unsigned int i = 0; i <= stackCount; ++i) {
+        float stackAngle = M_PI / 2 - i * stackStep;
+        xy = radius * cosf(stackAngle);
+        z = radius * sinf(stackAngle);
+
+        for(unsigned int j = 0; j <= sectorCount; ++j) {
+            float sectorAngle = j * sectorStep;
+            x = xy * cosf(sectorAngle);
+            y = xy * sinf(sectorAngle);
+            vertices.push_back(x); vertices.push_back(y); vertices.push_back(z);
+
+            nx = x * lengthInv; ny = y * lengthInv; nz = z * lengthInv;
+            vertices.push_back(nx); vertices.push_back(ny); vertices.push_back(nz);
+        }
+    }
+
+    for(unsigned int i = 0; i < stackCount; ++i) {
+        unsigned int k1 = i * (sectorCount + 1);
+        unsigned int k2 = k1 + sectorCount + 1;
+        for(unsigned int j = 0; j < sectorCount; ++j, ++k1, ++k2) {
+            if(i != 0) { indices.push_back(k1); indices.push_back(k2); indices.push_back(k1+1); }
+            if(i != stackCount-1) { indices.push_back(k1+1); indices.push_back(k2); indices.push_back(k2+1); }
+        }
+    }
+}
+
 int main() {
-    // 1. Inicjalizacja GLFW i okna
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -73,11 +107,11 @@ int main() {
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){ std::cout<<"GLAD error\n"; return -1; }
     glEnable(GL_DEPTH_TEST);
 
-    // 2. Kompilacja Shaderów
     Shader colorShader("./shaders/vertex.glsl", "./shaders/fragment.glsl"); 
     Shader textureShader("./shaders/vertex_texture.glsl", "./shaders/fragment_texture.glsl");
+    Shader lightingShader("./shaders/light_vertex.glsl", "./shaders/light_fragment.glsl");
+    Shader lightingShader2("./shaders/light_vertex.glsl", "./shaders/light_fragment2.glsl");
 
-    // 3. Tworzenie obiektów 3D
     Object3D coloredCube(cubeVerticesColored, sizeof(cubeVerticesColored)/sizeof(float), 
                          cubeIndicesForCube, 36, &colorShader);
 
@@ -85,18 +119,21 @@ int main() {
                           cubeIndicesForCube, 36, &textureShader, true);
 
     std::vector<float> sVert; std::vector<unsigned int> sInd;
-    generateSphere(0.5f, 36, 18, sVert, sInd);
+    generateSphere_orginal(1.0f, 36, 18, sVert, sInd);
     Object3D sphere(sVert.data(), sVert.size(), sInd.data(), sInd.size(), &colorShader);
 
-    // 4. Konfiguracja początkowa pozycji
+    generateSphere(1.0f, 36, 18, sVert, sInd);
+    Object3D sphereLighted(sVert.data(), sVert.size(), sInd.data(), sInd.size(), &lightingShader2);
+
     coloredCube.setPosition(glm::vec3(0.0f, 0.0f, 0.0f));
     coloredCube.setScale(glm::vec3(0.7f));
-    sphere.setPosition(glm::vec3(1.5f, 0.0f, 0.0f));
+    sphere.setPosition(glm::vec3(1.5f, 1.0f, 0.0f));
     sphere.setScale(glm::vec3(0.5f));
+    sphereLighted.setPosition(glm::vec3(2.0f, -1.0f, 0.0f));
+    sphereLighted.setScale(glm::vec3(0.5f));
     texturedCube.setPosition(glm::vec3(-1.5f, 0.0f, 0.0f));
     texturedCube.setScale(glm::vec3(0.7f));
 
-    // 5. Ładowanie Tekstury
     unsigned int textureWall;
     glGenTextures(1, &textureWall);
     glBindTexture(GL_TEXTURE_2D, textureWall);
@@ -117,24 +154,37 @@ int main() {
     }
     stbi_image_free(data);
 
-    // 6. Pętla główna
     while(!glfwWindowShouldClose(window)) {
         float time = (float)glfwGetTime();
+        float lightX = sin(time) * 3.0f;
+        float lightZ = cos(time) * 3.0f;
+        glm::vec3 lightPos(lightX, 1.0f, lightZ); 
+        glm::vec3 cameraPos(0.0f, 0.0f, 5.0f);
+
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Macierze View i Projection
         glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
         glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
-        // --- Rysowanie kolorowych ---
+        /*start*/
+        lightingShader2.use();
+        glUniform3fv(glGetUniformLocation(lightingShader2.ID, "lightPos"), 1, &lightPos[0]);
+        glUniform3f(glGetUniformLocation(lightingShader2.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
+        glUniform3f(glGetUniformLocation(lightingShader2.ID, "objectColor"), 0.5f, 0.8f, 0.2f);
+
+        glUniform3fv(glGetUniformLocation(lightingShader2.ID, "viewPos"), 1, &cameraPos[0]);
+        
+        sphereLighted.setRotation(glm::vec3(0, time, 0));
+        sphereLighted.draw(view, projection);
+        //koniec
+
         colorShader.use();
         coloredCube.setRotation(glm::vec3(time, time * 0.5f, 0.0f));
         coloredCube.draw(view, projection);
         sphere.setRotation(glm::vec3(time, time * 0.5f, 0.0f));
         sphere.draw(view, projection);
 
-        // --- Rysowanie teksturowanego sześcianu ---
         textureShader.use();
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, textureWall);

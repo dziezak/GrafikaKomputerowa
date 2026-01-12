@@ -1,11 +1,10 @@
-
 BUILD_DIR = build
 EXEC = $(BUILD_DIR)/PROJ4.exe
 VCPKG_BIN = C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/bin
 SHADERS_SRC = shaders
 SHADERS_DST = $(BUILD_DIR)/shaders
 
-all: build copy_shaders run
+all: clean build copy_shaders
 
 build:
 	@echo "Tworzenie katalogu build..."
@@ -21,10 +20,6 @@ copy_shaders:
 	@cp -r $(SHADERS_SRC)/* $(SHADERS_DST)/
 	@echo "Kopiowanie tekstur..."
 	@cp wall.jpg $(BUILD_DIR)/
-
-run:
-	@echo "Uruchamianie PROJ4..."
-	@cd $(BUILD_DIR) && PROJ4.exe
 
 clean:
 	@echo "Czyszczenie..."
