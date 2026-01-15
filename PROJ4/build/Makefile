@@ -128,6 +128,30 @@ PROJ4/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/build
 .PHONY : PROJ4/fast
 
+src/Camera.obj: src/Camera.cpp.obj
+.PHONY : src/Camera.obj
+
+# target to build an object file
+src/Camera.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Camera.cpp.obj
+.PHONY : src/Camera.cpp.obj
+
+src/Camera.i: src/Camera.cpp.i
+.PHONY : src/Camera.i
+
+# target to preprocess a source file
+src/Camera.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Camera.cpp.i
+.PHONY : src/Camera.cpp.i
+
+src/Camera.s: src/Camera.cpp.s
+.PHONY : src/Camera.s
+
+# target to generate assembly for a file
+src/Camera.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Camera.cpp.s
+.PHONY : src/Camera.cpp.s
+
 src/Object3D.obj: src/Object3D.cpp.obj
 .PHONY : src/Object3D.obj
 
@@ -233,6 +257,9 @@ help:
 	@echo ... edit_cache
 	@echo ... rebuild_cache
 	@echo ... PROJ4
+	@echo ... src/Camera.obj
+	@echo ... src/Camera.i
+	@echo ... src/Camera.s
 	@echo ... src/Object3D.obj
 	@echo ... src/Object3D.i
 	@echo ... src/Object3D.s

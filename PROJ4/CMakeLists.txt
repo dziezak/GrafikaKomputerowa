@@ -7,6 +7,7 @@ add_executable(PROJ4
     src/Shader.cpp
     src/Object3D.cpp
     src/glad.c
+    src/Camera.cpp
 )
 
 # Include directories

@@ -10,6 +10,7 @@
 #include "Object3D.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include "Camera.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -95,6 +96,23 @@ void generateSphere(float radius, unsigned int sectorCount, unsigned int stackCo
     }
 }
 
+bool keys[1024];
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key >= 0 && key < 1024)
+    {
+        if (action == GLFW_PRESS)
+            keys[key] = true;
+        else if (action == GLFW_RELEASE)
+            keys[key] = false;
+    }
+}
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
+
+
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -103,9 +121,14 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(800, 600, "Textured Cube Demo", nullptr, nullptr);
     if (!window) { std::cout << "Failed to create window\n"; glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, key_callback);
     
     if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)){ std::cout<<"GLAD error\n"; return -1; }
     glEnable(GL_DEPTH_TEST);
+
+    Camera camera(
+        glm::vec3(0.0f, 0.0f, 5.0f)
+    ); 
 
     Shader colorShader("./shaders/vertex.glsl", "./shaders/fragment.glsl"); 
     Shader textureShader("./shaders/vertex_texture.glsl", "./shaders/fragment_texture.glsl");
@@ -154,48 +177,69 @@ int main() {
     }
     stbi_image_free(data);
 
-    while(!glfwWindowShouldClose(window)) {
-        float time = (float)glfwGetTime();
-        float lightX = sin(time) * 3.0f;
-        float lightZ = cos(time) * 3.0f;
-        glm::vec3 lightPos(lightX, 1.0f, lightZ); 
-        glm::vec3 cameraPos(0.0f, 0.0f, 5.0f);
+while (!glfwWindowShouldClose(window))
+{
+    float currentFrame = glfwGetTime();
+    deltaTime = currentFrame - lastFrame;
+    lastFrame = currentFrame;
 
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // === STEROWANIE KAMERĄ (WASD) ===
+    camera.ProcessKeyboard(keys, deltaTime);
 
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-        glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
+    // === ŚWIATŁO ===
+    float time = currentFrame;
+    float lightX = sin(time) * 3.0f;
+    float lightZ = cos(time) * 3.0f;
+    glm::vec3 lightPos(lightX, 1.0f, lightZ);
 
-        /*start*/
-        lightingShader2.use();
-        glUniform3fv(glGetUniformLocation(lightingShader2.ID, "lightPos"), 1, &lightPos[0]);
-        glUniform3f(glGetUniformLocation(lightingShader2.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
-        glUniform3f(glGetUniformLocation(lightingShader2.ID, "objectColor"), 0.5f, 0.8f, 0.2f);
+    glClearColor(0.02f, 0.02f, 0.05f, 1.0f); // lepsze pod kosmos 🌌
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUniform3fv(glGetUniformLocation(lightingShader2.ID, "viewPos"), 1, &cameraPos[0]);
-        
-        sphereLighted.setRotation(glm::vec3(0, time, 0));
-        sphereLighted.draw(view, projection);
-        //koniec
+    // === MACIERZE ===
+    glm::mat4 view = camera.GetViewMatrix();
+    glm::mat4 projection = glm::perspective(
+        glm::radians(45.0f),
+        800.0f / 600.0f,
+        0.1f,
+        100.0f
+    );
 
-        colorShader.use();
-        coloredCube.setRotation(glm::vec3(time, time * 0.5f, 0.0f));
-        coloredCube.draw(view, projection);
-        sphere.setRotation(glm::vec3(time, time * 0.5f, 0.0f));
-        sphere.draw(view, projection);
+    // ================= OŚWIETLONA KULA =================
+    lightingShader2.use();
+    glUniform3fv(glGetUniformLocation(lightingShader2.ID, "lightPos"), 1, &lightPos[0]);
+    glUniform3f(glGetUniformLocation(lightingShader2.ID, "lightColor"), 1.0f, 1.0f, 1.0f);
+    glUniform3f(glGetUniformLocation(lightingShader2.ID, "objectColor"), 0.5f, 0.8f, 0.2f);
 
-        textureShader.use();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, textureWall);
-        glUniform1i(glGetUniformLocation(textureShader.ID, "texture1"), 0);
+    glUniform3fv(
+        glGetUniformLocation(lightingShader2.ID, "viewPos"),
+        1,
+        &camera.Position[0]
+    );
 
-        texturedCube.setRotation(glm::vec3(0.0f, time, time * 0.5f));
-        texturedCube.draw(view, projection);
+    sphereLighted.setRotation(glm::vec3(0.0f, time, 0.0f));
+    sphereLighted.draw(view, projection);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    }
+    // ================= OBIEKTY KOLOROWANE =================
+    colorShader.use();
+    coloredCube.setRotation(glm::vec3(time, time * 0.5f, 0.0f));
+    coloredCube.draw(view, projection);
+
+    sphere.setRotation(glm::vec3(time * 0.3f, time * 0.5f, 0.0f));
+    sphere.draw(view, projection);
+
+    // ================= OBIEKT TEKSTUROWANY =================
+    textureShader.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureWall);
+    glUniform1i(glGetUniformLocation(textureShader.ID, "texture1"), 0);
+
+    texturedCube.setRotation(glm::vec3(0.0f, time, time * 0.5f));
+    texturedCube.draw(view, projection);
+
+    glfwSwapBuffers(window);
+    glfwPollEvents();
+}
+
 
     glfwTerminate();
     return 0;
