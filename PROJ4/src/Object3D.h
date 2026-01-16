@@ -25,8 +25,11 @@ public:
     ~Object3D();
 
     void setPosition(const glm::vec3& pos);
+    glm::vec3 getPosition() const {return position;}
     void setRotation(const glm::vec3& rot);
+    glm::vec3 getRotation() const {return rotation; }
     void setScale(const glm::vec3& scl);
+    glm::vec3 getScale() const {return scale; }
 
     void draw(const glm::mat4& view, const glm::mat4& projection) const;
 };

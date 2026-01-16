@@ -3,81 +3,65 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include <filesystem>
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {
+    // 1. wczytanie kodu shaderów z plików
     std::string vertexCode;
     std::string fragmentCode;
-
-    std::ifstream vShaderFile;
-    std::ifstream fShaderFile;
-
+    std::ifstream vShaderFile, fShaderFile;
     vShaderFile.open(vertexPath);
     fShaderFile.open(fragmentPath);
-    std::cout<<"Vertex path: "<<vertexPath<<'\n'<<" Fragment path: "<<'\n';
-    std::cout<<std::filesystem::current_path()<<'\n';
-
-    if (!vShaderFile.is_open() || !fShaderFile.is_open())
-    {
-        std::cerr << "Nie mozna otworzyc plikow shaderow\n";
-        return;
-    } 
-    else {
-        std::cout<<"pliki shaderow otwarte\n";
-    }
-
-    std::stringstream vStream, fStream;
-    vStream << vShaderFile.rdbuf();
-    fStream << fShaderFile.rdbuf();
-
+    std::stringstream vShaderStream, fShaderStream;
+    vShaderStream << vShaderFile.rdbuf();
+    fShaderStream << fShaderFile.rdbuf();
     vShaderFile.close();
     fShaderFile.close();
+    vertexCode = vShaderStream.str();
+    fragmentCode = fShaderStream.str();
 
-    vertexCode = vStream.str();
-    fragmentCode = fStream.str();
+    const char* vShaderCode = vertexCode.c_str();
+    const char* fShaderCode = fragmentCode.c_str();
 
-    const char* vCode = vertexCode.c_str();
-    const char* fCode = fragmentCode.c_str();
-
+    // 2. kompilacja vertex shader
     unsigned int vertex, fragment;
     int success;
     char infoLog[512];
 
     vertex = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex, 1, &vCode, nullptr);
+    glShaderSource(vertex, 1, &vShaderCode, nullptr);
     glCompileShader(vertex);
-
     glGetShaderiv(vertex, GL_COMPILE_STATUS, &success);
-    if (!success)
+    if(!success)
     {
         glGetShaderInfoLog(vertex, 512, nullptr, infoLog);
-        std::cerr << "BLAD Vertex Shader:\n" << infoLog << std::endl;
+        std::cout << "ERROR::VERTEX_SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
+    // 3. kompilacja fragment shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment, 1, &fCode, nullptr);
+    glShaderSource(fragment, 1, &fShaderCode, nullptr);
     glCompileShader(fragment);
-
     glGetShaderiv(fragment, GL_COMPILE_STATUS, &success);
-    if (!success)
+    if(!success)
     {
         glGetShaderInfoLog(fragment, 512, nullptr, infoLog);
-        std::cerr << "BLAD Fragment Shader:\n" << infoLog << std::endl;
+        std::cout << "ERROR::FRAGMENT_SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
+    // 4. linkowanie programu
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
     glLinkProgram(ID);
-
     glGetProgramiv(ID, GL_LINK_STATUS, &success);
-    if (!success)
+    if(!success)
     {
         glGetProgramInfoLog(ID, 512, nullptr, infoLog);
-        std::cerr << "BLAD Program Shader:\n" << infoLog << std::endl;
+        std::cout << "ERROR::SHADER_PROGRAM_LINKING_FAILED\n" << infoLog << std::endl;
     }
 
+    // 5. usuwamy shadery po linkowaniu
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 }
@@ -89,10 +73,21 @@ void Shader::use() const
 
 void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
 {
-    glUniformMatrix4fv(
-        glGetUniformLocation(ID, name.c_str()),
-        1,
-        GL_FALSE,
-        &mat[0][0]
-    );
+    glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+}
+
+// -------------------- NOWE METODY --------------------
+void Shader::setVec3(const std::string& name, const glm::vec3& value) const
+{
+    glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);
+}
+
+void Shader::setVec3(const std::string& name, float x, float y, float z) const
+{
+    glUniform3f(glGetUniformLocation(ID, name.c_str()), x, y, z);
+}
+
+void Shader::setFloat(const std::string& name, float value) const
+{
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
