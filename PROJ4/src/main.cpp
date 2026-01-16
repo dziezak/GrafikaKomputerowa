@@ -305,9 +305,30 @@ int main()
 
         // -------- ŚWIATŁO (SŁOŃCE) --------
         glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
+        // --- obliczenie kierunku statku ---
+        glm::vec3 shipPos = spaceship.getPosition();
+        glm::vec3 yawPitch = spaceship.getRotation();
+        float yaw2 = yawPitch.y;
+        float pitch = yawPitch.x;
+
+        glm::vec3 shipForward;
+        shipForward.x = cos(pitch) * sin(yaw2);
+        shipForward.y = sin(pitch);
+        shipForward.z = cos(pitch) * cos(yaw2);
+        shipForward = glm::normalize(shipForward);
+
+        // reflektor przed statkiem, nie w środku
+        glm::vec3 spotlightPos = shipPos + shipForward * 1.5f;
+        ///koniec kierunku statku
 
         lightingShader.use();
-        glUniform3fv(
+
+        lightingShader.setVec3("spotLightPos", spotlightPos);
+        lightingShader.setVec3("spotLightDir", shipForward);
+        lightingShader.setVec3("spotLightColor", 1.0f, 1.0f, 0.9f);
+        lightingShader.setFloat("cutOff", glm::cos(glm::radians(20.0f)));
+        lightingShader.setFloat("outerCutOff", glm::cos(glm::radians(30.0f)));
+            glUniform3fv(
             glGetUniformLocation(lightingShader.ID, "lightPos"),
             1, &lightPos[0]
         );
@@ -351,20 +372,6 @@ int main()
         spotlightShader.setVec3("viewPos", cameraShip.Position);
 
         // --------- Dwa reflektory ---------
-        // --- obliczenie kierunku statku ---
-        glm::vec3 shipPos = spaceship.getPosition();
-        glm::vec3 yawPitch = spaceship.getRotation();
-        float yaw2 = yawPitch.y;
-        float pitch = yawPitch.x;
-
-        glm::vec3 shipForward;
-        shipForward.x = cos(pitch) * sin(yaw2);
-        shipForward.y = sin(pitch);
-        shipForward.z = cos(pitch) * cos(yaw2);
-        shipForward = glm::normalize(shipForward);
-
-        // reflektor przed statkiem, nie w środku
-        glm::vec3 spotlightPos = shipPos + shipForward * 1.5f;
 
         // użycie shadera
         spotlightShader.use();
