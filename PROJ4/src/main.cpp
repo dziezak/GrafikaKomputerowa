@@ -336,6 +336,9 @@ int main()
 
         // -------- DRAW SPACESHIP ----------
         spotlightShader.use();
+        spotlightShader.setVec3("ambientLight", 0.3f, 0.3f, 0.3f); // dodaje trochę światła
+        spotlightShader.setVec3("topLightPos", glm::vec3(0.0f, 5.0f, 0.0f));
+        spotlightShader.setVec3("topLightColor", glm::vec3(1.0f, 1.0f, 1.0f));
 
         // Ustawienie macierzy
         spotlightShader.setMat4("view", view);
@@ -348,31 +351,46 @@ int main()
         spotlightShader.setVec3("viewPos", cameraShip.Position);
 
         // --------- Dwa reflektory ---------
+        // --- obliczenie kierunku statku ---
         glm::vec3 shipPos = spaceship.getPosition();
-        float yaw2 = spaceship.getRotation().y;
-        float pitch = spaceship.getRotation().x;
+        glm::vec3 yawPitch = spaceship.getRotation();
+        float yaw2 = yawPitch.y;
+        float pitch = yawPitch.x;
 
-        // kierunek reflektorów z uwzględnieniem pitch/yaw
         glm::vec3 shipForward;
         shipForward.x = cos(pitch) * sin(yaw2);
         shipForward.y = sin(pitch);
         shipForward.z = cos(pitch) * cos(yaw2);
         shipForward = glm::normalize(shipForward);
 
-        // Pozycje dwóch reflektorów
-        glm::vec3 leftOffset(-0.3f, 0.0f, 0.5f);
-        glm::vec3 rightOffset(0.3f, 0.0f, 0.5f);
-        glm::vec3 midOffset = (leftOffset + rightOffset) * 0.5f;
+        // reflektor przed statkiem, nie w środku
+        glm::vec3 spotlightPos = shipPos + shipForward * 1.5f;
 
-        // Ustawienie uniformów reflektorów w shaderze
-        spotlightShader.setVec3("spotLightPos", shipPos + midOffset);
+        // użycie shadera
+        spotlightShader.use();
+        spotlightShader.setMat4("view", view);
+        spotlightShader.setMat4("projection", projection);
+
+        // kolory
+        spotlightShader.setVec3("objectColor", 0.8f, 0.8f, 0.9f);
+        spotlightShader.setVec3("ambientLight", 0.2f, 0.2f, 0.2f);
+
+        spotlightShader.setVec3("topLightPos", glm::vec3(0.0f, 5.0f, 0.0f));
+        spotlightShader.setVec3("topLightColor", glm::vec3(1.0f, 1.0f, 1.0f));
+
+        // reflektor
+        spotlightShader.setVec3("spotLightPos", spotlightPos);
         spotlightShader.setVec3("spotLightDir", shipForward);
-        spotlightShader.setFloat("cutOff", glm::cos(glm::radians(15.0f)));
-        spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(20.0f)));
+        spotlightShader.setFloat("cutOff", glm::cos(glm::radians(20.0f)));
+        spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(30.0f)));
         spotlightShader.setVec3("spotLightColor", 1.0f, 1.0f, 0.9f);
 
-        // Teraz rysujemy statek
+        // bardzo ważne dla speculara:
+        spotlightShader.setVec3("viewPos", cameraShip.Position);
+
+        // rysowanie statku
         spaceship.draw(view, projection);
+
 
 
         // -------- DRAW --------
