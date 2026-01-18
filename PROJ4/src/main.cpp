@@ -184,6 +184,9 @@ int main()
     }
 
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 
     // -------- SHADER --------
     Shader lightingShader(
@@ -194,6 +197,11 @@ int main()
         "./shaders/light_vertex.glsl",
         "./shaders/spotlight_fragment.glsl"
     );
+    Shader fogShader(
+        "./shaders/light_vertex.glsl", 
+        "./shaders/fog_fragment.glsl"
+    );
+
 
     // -------- KAMERA --------
     int activeCamera = 1;
@@ -248,6 +256,11 @@ int main()
         sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
+    Object3D fogSphere(
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
+        &fogShader
+    );
 
 
     sun.setScale(glm::vec3(1.3f));
@@ -258,6 +271,9 @@ int main()
     planet3.setScale(glm::vec3(0.3f));
     planet4.setScale(glm::vec3(0.65f));
     moon.setScale(glm::vec3(0.05f));
+    fogSphere.setScale(glm::vec3(30.0f));
+    fogSphere.setPosition(glm::vec3(0.0f));
+
 
     spaceship.setScale(glm::vec3(0.15f));
     spaceship.setPosition(glm::vec3(0.0f, 0.0f, 5.0f));
@@ -427,15 +443,16 @@ int main()
 
         // ===================== MGLA =====================
         static float fogDensity = 0.01f;
-        glm::vec3 fogColor = glm::vec3(0.25f, 0.28f, 0.32f);
+        //glm::vec3 fogColor = glm::vec3(0.25f, 0.28f, 0.32f);
+        glm::vec3 fogColor = glm::vec3(0.0f, 0.0f, 0.0f);
 
         if (keys[GLFW_KEY_M])
-            fogDensity += 0.02f * deltaTime;
+            fogDensity += 0.3f * deltaTime;
     
         if (keys[GLFW_KEY_N])
-            fogDensity -= 0.02f * deltaTime;
+            fogDensity -= 0.3f * deltaTime;
 
-        fogDensity = glm::clamp(fogDensity, 0.0f, 0.5f);
+        fogDensity = glm::clamp(fogDensity, 0.0f, 2.0f);
 
 
 
@@ -455,6 +472,12 @@ int main()
         lightingShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
         lightingShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
         lightingShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
+
+        // ===== Mgla 
+        lightingShader.setVec3("fogCenter", glm::vec3(0.0f, 0.0f, 0.0f)); // Słońce 
+        lightingShader.setFloat("fogRadius", 8.0f); // jak daleko mgła sięga 
+        lightingShader.setFloat("fogStrength", 0.8f); // jak mocna mgła 
+        lightingShader.setVec3("fogColor", fogColor);
 
         // ===== REFLEKTOR PRZEDNI =====
         lightingShader.setVec3("spotLightPos", backPos);
@@ -496,9 +519,8 @@ int main()
         lightingShader.setFloat("shininess", 4.0f);
         planet4.draw(view, projection);
 
-        // --- mgla ---
+        // --- mgla - kolor planet ---
         lightingShader.setFloat("fogDensity", fogDensity);
-        lightingShader.setVec3("fogColor", fogColor);
 
         // ===== STATEK (spotlightShader) =====
         spotlightShader.use();
@@ -526,7 +548,7 @@ int main()
         spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
         spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
 
-        //--- mgla ---
+        //--- mgla kolor planet ---
         spotlightShader.setFloat("fogDensity", fogDensity);
         spotlightShader.setVec3("fogColor", fogColor);
 
@@ -535,9 +557,23 @@ int main()
         moon.draw(view, projection);
         spaceshipObj.draw(view, projection);
 
+        // ===================== MGŁA (fogSphere) =====================
+        glDepthMask(GL_FALSE); // mgła nie zapisuje głębi
+        glDisable(GL_CULL_FACE);
+
+        fogShader.use();
+        fogShader.setVec3("fogColor", fogColor);
+        fogShader.setFloat("fogDensity", fogDensity);
+
+        fogSphere.draw(view, projection);
+
+        glEnable(GL_CULL_FACE);
+        glDepthMask(GL_TRUE); // przywrócenie normalnego depth write
+
         // --- swap/poll ---
         glfwSwapBuffers(window);
         glfwPollEvents();
+
     }
 
     glfwTerminate();

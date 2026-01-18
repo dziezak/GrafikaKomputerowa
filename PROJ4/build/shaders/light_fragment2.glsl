@@ -24,7 +24,7 @@ uniform float backCutOff;
 uniform float backOuterCutOff;
 
 // ================= DODATKOWE ŚWIATŁO =================
-uniform vec3 ambientLight; // np. 0.2,0.2,0.2
+uniform vec3 ambientLight;
 uniform vec3 topLightPos;
 uniform vec3 topLightColor;
 
@@ -74,19 +74,41 @@ void main()
     float topDiff = max(dot(norm, topDir), 0.0);
     vec3 topDiffuse = topDiff * topLightColor;
 
+    // ============================================================
+    // ROZDZIELENIE ŚWIATEŁ
+    // ============================================================
 
+    // światło globalne (podlega mgle)
+    vec3 globalLight =
+        ambient +
+        diffuse +
+        specular +
+        topDiffuse;
 
-    // ===== WYNIK KOŃCOWY =====
-    vec3 result = ambient + (diffuse + specular +
-                             spotDiffuse + spotSpecular +
-                             backDiffuse + backSpecular +
-                             topDiffuse) * objectColor;
+    // światło reflektorów (NIE podlega mgle)
+    vec3 spotLight =
+        spotDiffuse +
+        spotSpecular +
+        backDiffuse +
+        backSpecular;
 
-    // ===== MGŁA =====
-    float dist = length(viewPos - FragPos);
-    float fogFactor = exp(-pow(dist * fogDensity, 2.0));
-    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    vec3 baseColor = globalLight * objectColor;
+    vec3 spotColor = spotLight * objectColor;
 
-    vec3 finalColor = mix(fogColor, result, fogFactor);
+    // ============================================================
+    // MGŁA TYLKO NA GLOBALNE ŚWIATŁO
+    // ============================================================
+
+    float depth = gl_FragCoord.z / gl_FragCoord.w;
+    float fogFactor = clamp(exp(-depth * fogDensity), 0.0, 1.0);
+
+    vec3 foggedBase = mix(fogColor, baseColor, fogFactor);
+
+    // ============================================================
+    // FINALNY KOLOR (reflektory dodane BEZ mgły)
+    // ============================================================
+
+    vec3 finalColor = foggedBase + spotColor;
+
     FragColor = vec4(finalColor, 1.0);
 }
