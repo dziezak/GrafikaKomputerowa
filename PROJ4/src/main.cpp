@@ -425,6 +425,20 @@ int main()
         if (spotPitchOffset >  maxPitch) spotPitchOffset =  maxPitch;
         if (spotPitchOffset < -maxPitch) spotPitchOffset = -maxPitch;
 
+        // ===================== MGLA =====================
+        static float fogDensity = 0.01f;
+        glm::vec3 fogColor = glm::vec3(0.25f, 0.28f, 0.32f);
+
+        if (keys[GLFW_KEY_M])
+            fogDensity += 0.02f * deltaTime;
+    
+        if (keys[GLFW_KEY_N])
+            fogDensity -= 0.02f * deltaTime;
+
+        fogDensity = glm::clamp(fogDensity, 0.0f, 0.5f);
+
+
+
 
 
         // ===================== ŚWIATŁO =====================
@@ -482,6 +496,10 @@ int main()
         lightingShader.setFloat("shininess", 4.0f);
         planet4.draw(view, projection);
 
+        // --- mgla ---
+        lightingShader.setFloat("fogDensity", fogDensity);
+        lightingShader.setVec3("fogColor", fogColor);
+
         // ===== STATEK (spotlightShader) =====
         spotlightShader.use();
         spotlightShader.setMat4("view", view);
@@ -507,6 +525,11 @@ int main()
         spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
         spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
         spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
+
+        //--- mgla ---
+        spotlightShader.setFloat("fogDensity", fogDensity);
+        spotlightShader.setVec3("fogColor", fogColor);
+
 
         // --- rysowanie statku ---
         moon.draw(view, projection);

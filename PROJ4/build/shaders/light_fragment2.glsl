@@ -28,6 +28,10 @@ uniform vec3 ambientLight; // np. 0.2,0.2,0.2
 uniform vec3 topLightPos;
 uniform vec3 topLightColor;
 
+// ================= Mgła =================
+uniform float fogDensity;
+uniform vec3 fogColor;
+
 void main()
 {
     vec3 norm = normalize(Normal);
@@ -70,11 +74,19 @@ void main()
     float topDiff = max(dot(norm, topDir), 0.0);
     vec3 topDiffuse = topDiff * topLightColor;
 
+
+
     // ===== WYNIK KOŃCOWY =====
     vec3 result = ambient + (diffuse + specular +
                              spotDiffuse + spotSpecular +
                              backDiffuse + backSpecular +
                              topDiffuse) * objectColor;
 
-    FragColor = vec4(result, 1.0);
+    // ===== MGŁA =====
+    float dist = length(viewPos - FragPos);
+    float fogFactor = exp(-pow(dist * fogDensity, 2.0));
+    fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+    vec3 finalColor = mix(fogColor, result, fogFactor);
+    FragColor = vec4(finalColor, 1.0);
 }
