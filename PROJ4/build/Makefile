@@ -200,6 +200,30 @@ src/Shader.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Shader.cpp.s
 .PHONY : src/Shader.cpp.s
 
+src/Spaceship.obj: src/Spaceship.cpp.obj
+.PHONY : src/Spaceship.obj
+
+# target to build an object file
+src/Spaceship.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj
+.PHONY : src/Spaceship.cpp.obj
+
+src/Spaceship.i: src/Spaceship.cpp.i
+.PHONY : src/Spaceship.i
+
+# target to preprocess a source file
+src/Spaceship.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Spaceship.cpp.i
+.PHONY : src/Spaceship.cpp.i
+
+src/Spaceship.s: src/Spaceship.cpp.s
+.PHONY : src/Spaceship.s
+
+# target to generate assembly for a file
+src/Spaceship.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Spaceship.cpp.s
+.PHONY : src/Spaceship.cpp.s
+
 src/glad.obj: src/glad.c.obj
 .PHONY : src/glad.obj
 
@@ -266,6 +290,9 @@ help:
 	@echo ... src/Shader.obj
 	@echo ... src/Shader.i
 	@echo ... src/Shader.s
+	@echo ... src/Spaceship.obj
+	@echo ... src/Spaceship.i
+	@echo ... src/Spaceship.s
 	@echo ... src/glad.obj
 	@echo ... src/glad.i
 	@echo ... src/glad.s

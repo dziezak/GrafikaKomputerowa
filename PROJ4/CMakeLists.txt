@@ -8,6 +8,7 @@ add_executable(PROJ4
     src/Object3D.cpp
     src/glad.c
     src/Camera.cpp
+    src/Spaceship.cpp
 )
 
 # Include directories

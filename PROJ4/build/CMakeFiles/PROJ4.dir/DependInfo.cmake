@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Camera.cpp" "CMakeFiles/PROJ4.dir/src/Camera.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Camera.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Object3D.cpp" "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Shader.cpp" "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj.d"
+  "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Spaceship.cpp" "CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/main.cpp" "CMakeFiles/PROJ4.dir/src/main.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/main.cpp.obj.d"
   )
 

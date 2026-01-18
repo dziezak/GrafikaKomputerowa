@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj"
   "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj.d"
+  "CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj"
+  "CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/glad.c.obj"
   "CMakeFiles/PROJ4.dir/src/glad.c.obj.d"
   "CMakeFiles/PROJ4.dir/src/main.cpp.obj"

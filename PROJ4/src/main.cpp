@@ -11,6 +11,7 @@
 #include "Shader.h"
 #include "Object3D.h"
 #include "Camera.h"
+#include "Spaceship.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -229,11 +230,13 @@ int main()
         sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
-    Object3D spaceship(
+    Object3D spaceshipObj(
         shipVertices, sizeof(shipVertices) / sizeof(float),
         shipIndices, sizeof(shipIndices) / sizeof(unsigned int),
         &spotlightShader
     );
+    Spaceship spaceship(&spaceshipObj);
+
 
     sun.setScale(glm::vec3(1.5f));
     sun.setPosition(glm::vec3(0.0f));
@@ -283,21 +286,8 @@ int main()
             100.0f
         );
 
-        // -------- RUCH STATKU --------
-        float shipSpeed = 5.0f;
-        float rotationSpeed = glm::radians(90.0f);
-
-        glm::vec3 shipRot = spaceship.getRotation();
-        if (keys[GLFW_KEY_A]) shipRot.y += rotationSpeed * deltaTime;
-        if (keys[GLFW_KEY_D]) shipRot.y -= rotationSpeed * deltaTime;
-        spaceship.setRotation(shipRot);
-
-        glm::vec3 forward = computeShipForward(shipRot);
-
-        if (keys[GLFW_KEY_W])
-            spaceship.setPosition(spaceship.getPosition() + forward * shipSpeed * deltaTime);
-        if (keys[GLFW_KEY_S])
-            spaceship.setPosition(spaceship.getPosition() - forward * shipSpeed * deltaTime);
+        spaceship.update(keys, deltaTime);
+        glm::vec3 forward = spaceship.getForward(); 
 
         // -------- ORBITY PLANET --------
         angle1 += orbitSpeed1 * deltaTime;
@@ -356,19 +346,34 @@ int main()
             );
             viewPos = camera3.Position;
         }
-        else // 4 – kamera za statkiem
+        else if (activeCamera == 4)
         {
-            glm::vec3 cameraOffset = -forward * 4.0f + glm::vec3(0.0f, 3.0f, 0.0f);
-            cameraShip.Position = spaceship.getPosition() + cameraOffset;
-            glm::vec3 camTarget = spaceship.getPosition() + forward * 5.0f;
+            glm::vec3 shipPos = spaceship.getPosition();
+            glm::vec3 forward = spaceship.getForward();
+
+            // --- offset kamery ---
+            glm::vec3 cameraPos =
+                shipPos
+                - forward * 6.0f      // wyraźnie za statkiem
+                + glm::vec3(0.0f, 2.5f, 0.0f);  // trochę nad statkiem
+
+            // --- cel kamery: NIE prosto przed siebie ---
+            // patrzymy trochę niżej, aby statek był widoczny
+            glm::vec3 cameraTarget =
+                shipPos
+                + forward * 10.0f
+                + glm::vec3(0.0f, -1.5f, 0.0f);   // kluczowe: patrzymy lekko w dół
 
             view = glm::lookAt(
-                cameraShip.Position,
-                camTarget,
+                cameraPos,
+                cameraTarget,
                 glm::vec3(0.0f, 1.0f, 0.0f)
             );
-            viewPos = cameraShip.Position;
+
+            viewPos = cameraPos;
         }
+
+
 
         // ===================== ŚWIATŁO =====================
         glm::vec3 lightPos(0.0f, 0.0f, 0.0f); // słońce
@@ -432,7 +437,8 @@ int main()
         spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
 
         // --- rysowanie statku ---
-        spaceship.draw(view, projection);
+        //spaceship.draw(view, projection);
+        spaceshipObj.draw(view, projection);
 
         // --- swap/poll ---
         glfwSwapBuffers(window);
