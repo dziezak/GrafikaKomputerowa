@@ -395,8 +395,8 @@ int main()
         lightingShader.setVec3("backLightPos", frontPos);
         lightingShader.setVec3("backLightDir", forward);
         lightingShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
-        lightingShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
-        lightingShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
+        lightingShader.setFloat("backCutOff", glm::cos(glm::radians(5.0f)));
+        lightingShader.setFloat("backOuterCutOff", glm::cos(glm::radians(10.0f)));
 
 
         // --- Słońce ---
