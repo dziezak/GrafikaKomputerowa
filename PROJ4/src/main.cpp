@@ -199,7 +199,7 @@ int main()
     int activeCamera = 1;
     bool cKeyPressedLastFrame = false;
 
-    Camera camera1(glm::vec3(0.0f, 2.0f, 10.0f));  // swobodna
+    Camera camera1(glm::vec3(0.0f, 4.0f, 20.0f));  // swobodna
     Camera camera2(glm::vec3(0.0f, 4.0f, 15.0f));  // za planetą 1
     Camera camera3(glm::vec3(15.0f, 10.0f, 15.0f)); // statyczna
     Camera cameraShip(glm::vec3(0.0f, 3.0f, -5.0f)); // za statkiem
@@ -243,32 +243,41 @@ int main()
         sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
+    Object3D planet4(
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
+        &lightingShader
+    );
 
 
-    sun.setScale(glm::vec3(1.5f));
+    sun.setScale(glm::vec3(1.3f));
     sun.setPosition(glm::vec3(0.0f));
 
     planet1.setScale(glm::vec3(0.4f));
     planet2.setScale(glm::vec3(0.6f));
     planet3.setScale(glm::vec3(0.3f));
+    planet4.setScale(glm::vec3(0.65f));
     moon.setScale(glm::vec3(0.05f));
 
-    spaceship.setScale(glm::vec3(0.2f));
-    spaceship.setPosition(glm::vec3(0.0f, 0.0f, -5.0f));
+    spaceship.setScale(glm::vec3(0.15f));
+    spaceship.setPosition(glm::vec3(0.0f, 0.0f, 5.0f));
 
     // parametry orbit planet
     float angle1 = 0.0f;
     float angle2 = 0.0f;
     float angle3 = 0.0f;
     float moonAngle = 0.0f;
+    float angle4 = 0.0f;
 
     float orbitSpeed1 = 0.5f;
     float orbitSpeed2 = 0.3f;
     float orbitSpeed3 = 0.8f;
+    float orbitSpeed4 = 1.1f;
 
     float orbitRadius1 = 4.0f;
     float orbitRadius2 = 7.0f;
     float orbitRadius3 = 10.0f;
+    float orbitRadius4 = 13.0f;
 
     // ===================== PĘTLA GŁÓWNA =====================
     while (!glfwWindowShouldClose(window))
@@ -310,6 +319,7 @@ int main()
         angle1 += orbitSpeed1 * deltaTime;
         angle2 += orbitSpeed2 * deltaTime;
         angle3 += orbitSpeed3 * deltaTime;
+        angle4 += orbitSpeed4 * deltaTime;
         moonAngle += deltaTime * 3.0f;
 
         planet1.setPosition(glm::vec3(
@@ -334,6 +344,11 @@ int main()
             sin(moonAngle) * 0.8f
         );
         moon.setPosition(moonPos);
+        planet4.setPosition(glm::vec3(
+            cosf(angle4) * orbitRadius4,
+            0.0f,
+            sinf(angle4) * orbitRadius4
+        ));
 
         // -------- WYBÓR KAMERY --------
         if (keys[GLFW_KEY_C] && !cKeyPressedLastFrame)
@@ -461,6 +476,11 @@ int main()
         lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.8f, 0.5f));
         lightingShader.setFloat("shininess", 8.0f);
         planet3.draw(view, projection);
+
+        // --- Planeta 4 ---
+        lightingShader.setVec3("objectColor", glm::vec3(0.6f, 0.4f, 0.9f));
+        lightingShader.setFloat("shininess", 4.0f);
+        planet4.draw(view, projection);
 
         // ===== STATEK (spotlightShader) =====
         spotlightShader.use();
