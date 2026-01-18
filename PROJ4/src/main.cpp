@@ -17,11 +17,11 @@
 #endif
 
 // ===================== GLOBALNE =====================
-bool keys[1024];
+bool keys[1024] = { false };
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
-// ===================== CALLBACK =====================
+// ===================== CALLBACKI =====================
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key >= 0 && key < 1024)
@@ -31,29 +31,17 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         else if (action == GLFW_RELEASE)
             keys[key] = false;
     }
+
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
 }
-// ===================== SPACESHIP =====================
-float shipVertices[] = {
-    -0.5f, -0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
-     0.5f, -0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
-     0.5f,  0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
-    -0.5f,  0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
-    -0.5f, -0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
-     0.5f, -0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
-     0.5f,  0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
-    -0.5f,  0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
-};
 
-unsigned int shipIndices[] = {
-    0,1,2,  2,3,0,  // tył
-    4,5,6,  6,7,4,  // przód
-    0,4,7,  7,3,0,  // lewa
-    1,5,6,  6,2,1,  // prawa
-    3,2,6,  6,7,3,  // góra
-    0,1,5,  5,4,0   // dół
-};
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
 
-// ===================== SPHERE ====================
+// ===================== GENEROWANIE SFERY =====================
 void generateSphere(
     float radius,
     unsigned int sectorCount,
@@ -84,7 +72,7 @@ void generateSphere(
             x = xy * cosf(sectorAngle);
             y = xy * sinf(sectorAngle);
 
-            // position
+            // pozycja
             vertices.push_back(x);
             vertices.push_back(y);
             vertices.push_back(z);
@@ -124,17 +112,51 @@ void generateSphere(
     }
 }
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
-}
+// ===================== GEOMETRIA STATKU =====================
+float shipVertices[] = {
+    // pos                // normal
+    -0.5f, -0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
+     0.5f, -0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
+     0.5f,  0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
+    -0.5f,  0.5f, -1.0f,  0.0f, 0.0f, -1.0f,
 
+    -0.5f, -0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
+     0.5f, -0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
+     0.5f,  0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
+    -0.5f,  0.5f,  1.0f,  0.0f, 0.0f, 1.0f,
+};
+
+unsigned int shipIndices[] = {
+    0,1,2,  2,3,0,  // tył
+    4,5,6,  6,7,4,  // przód
+    0,4,7,  7,3,0,  // lewa
+    1,5,6,  6,2,1,  // prawa
+    3,2,6,  6,7,3,  // góra
+    0,1,5,  5,4,0   // dół
+};
+
+// ===================== POMOCNICZE =====================
+glm::vec3 computeShipForward(const glm::vec3& rotation)
+{
+    // używamy tylko yaw (rotation.y)
+    float yaw = rotation.y;
+    glm::vec3 forward;
+    forward.x = -sinf(yaw);
+    forward.y = 0.0f;
+    forward.z = -cosf(yaw);
+    return glm::normalize(forward);
+}
 
 // ===================== MAIN =====================
 int main()
 {
     // -------- GLFW --------
-    glfwInit();
+    if (!glfwInit())
+    {
+        std::cout << "Failed to init GLFW\n";
+        return -1;
+    }
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -146,32 +168,19 @@ int main()
         glfwTerminate();
         return -1;
     }
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
 
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to init GLAD\n";
+        glfwTerminate();
         return -1;
     }
 
     glEnable(GL_DEPTH_TEST);
-
-    // -------- CAMERA --------
-    int activeCamera = 1;
-    bool cKeyPressedLastFrame = false;
-    Camera camera1(glm::vec3(0.0f, 2.0f, 10.0f));
-    Camera camera2(glm::vec3(0.0f, 4.0f, 15.0f));
-    Camera camera3(glm::vec3(0.0f, 2.0f, 10.0f));
-    Camera cameraShip(glm::vec3(0.0f, 1.0f, -3.0f));
-    
-    glm::vec3 cameraShipOffset(0.0f, 1.0f, -3.0f);
-    glm::vec3 camera2Offset(0.0f, 2.0f, 5.0f);
-    glm::vec3 camera3Position(15.0f, 10.0f, 15.0f);
-
 
     // -------- SHADER --------
     Shader lightingShader(
@@ -179,69 +188,92 @@ int main()
         "./shaders/light_fragment2.glsl"
     );
     Shader spotlightShader(
-        "./shaders/light_vertex.glsl", 
+        "./shaders/light_vertex.glsl",
         "./shaders/spotlight_fragment.glsl"
     );
 
+    // -------- KAMERA --------
+    int activeCamera = 1;
+    bool cKeyPressedLastFrame = false;
+
+    Camera camera1(glm::vec3(0.0f, 2.0f, 10.0f));  // swobodna
+    Camera camera2(glm::vec3(0.0f, 4.0f, 15.0f));  // za planetą 1
+    Camera camera3(glm::vec3(15.0f, 10.0f, 15.0f)); // statyczna
+    Camera cameraShip(glm::vec3(0.0f, 3.0f, -5.0f)); // za statkiem
+
+    glm::vec3 camera2Offset(0.0f, 2.0f, 5.0f);
 
     // -------- GEOMETRIA SPHERY --------
     std::vector<float> sphereVertices;
     std::vector<unsigned int> sphereIndices;
-
     generateSphere(1.0f, 48, 24, sphereVertices, sphereIndices);
 
     // -------- OBIEKTY --------
     Object3D sun(
-        sphereVertices.data(), sphereVertices.size(),
-        sphereIndices.data(), sphereIndices.size(),
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
-
     Object3D planet1(
-        sphereVertices.data(), sphereVertices.size(),
-        sphereIndices.data(), sphereIndices.size(),
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
-
     Object3D planet2(
-        sphereVertices.data(), sphereVertices.size(),
-        sphereIndices.data(), sphereIndices.size(),
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
-
     Object3D planet3(
-        sphereVertices.data(), sphereVertices.size(),
-        sphereIndices.data(), sphereIndices.size(),
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
         &lightingShader
     );
-
     Object3D spaceship(
-        shipVertices, sizeof(shipVertices)/sizeof(float),
-        shipIndices, sizeof(shipIndices)/sizeof(unsigned int),
-        &spotlightShader 
+        shipVertices, sizeof(shipVertices) / sizeof(float),
+        shipIndices, sizeof(shipIndices) / sizeof(unsigned int),
+        &spotlightShader
     );
 
-    // -------- TRANSFORMACJE --------
     sun.setScale(glm::vec3(1.5f));
+    sun.setPosition(glm::vec3(0.0f));
 
     planet1.setScale(glm::vec3(0.4f));
     planet2.setScale(glm::vec3(0.6f));
     planet3.setScale(glm::vec3(0.3f));
 
+    spaceship.setScale(glm::vec3(0.2f));
+    spaceship.setPosition(glm::vec3(0.0f, 0.0f, -5.0f));
 
+    // parametry orbit planet
+    float angle1 = 0.0f;
+    float angle2 = 0.0f;
+    float angle3 = 0.0f;
 
-    // ===================== LOOP =====================
+    float orbitSpeed1 = 0.5f;
+    float orbitSpeed2 = 0.3f;
+    float orbitSpeed3 = 0.8f;
+
+    float orbitRadius1 = 4.0f;
+    float orbitRadius2 = 7.0f;
+    float orbitRadius3 = 10.0f;
+
+    // ===================== PĘTLA GŁÓWNA =====================
     while (!glfwWindowShouldClose(window))
     {
-        float currentFrame = glfwGetTime();
+        // --- czas ---
+        float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        //camera1.ProcessKeyboard(keys, deltaTime);
+        // --- input kamery 1 (swobodna) ---
+        camera1.ProcessKeyboard(keys, deltaTime);
 
+        // --- czyszczenie ---
         glClearColor(0.02f, 0.02f, 0.06f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // --- projekcja ---
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         glm::mat4 projection = glm::perspective(
@@ -251,200 +283,158 @@ int main()
             100.0f
         );
 
+        // -------- RUCH STATKU --------
+        float shipSpeed = 5.0f;
+        float rotationSpeed = glm::radians(90.0f);
 
-        // -------- Ruch statku --------
+        glm::vec3 shipRot = spaceship.getRotation();
+        if (keys[GLFW_KEY_A]) shipRot.y += rotationSpeed * deltaTime;
+        if (keys[GLFW_KEY_D]) shipRot.y -= rotationSpeed * deltaTime;
+        spaceship.setRotation(shipRot);
 
-        float shipSpeed = 5.0f; // jednostki na sekundę
-        float rotationSpeed = glm::radians(90.0f); // radiany na sekundę
+        glm::vec3 forward = computeShipForward(shipRot);
 
-        // obrót w lewo/prawo
-        glm::vec3 rot = spaceship.getRotation();
-        if (keys[GLFW_KEY_A])
-            rot.y += rotationSpeed * deltaTime;
-        if (keys[GLFW_KEY_D])
-            rot.y -= rotationSpeed * deltaTime;
-        spaceship.setRotation(rot);
-
-        glm::vec3 forward;
-        float yaw = spaceship.getRotation().y; // rotacja wokół osi Y
-        forward.x = sin(yaw);
-        forward.y = 0.0f;
-        forward.z = cos(yaw);
-        glm::vec3 right = glm::cross(forward, glm::vec3(0.0f, 1.0f, 0.0f));
-
-        // poruszanie przód/tył
         if (keys[GLFW_KEY_W])
             spaceship.setPosition(spaceship.getPosition() + forward * shipSpeed * deltaTime);
         if (keys[GLFW_KEY_S])
             spaceship.setPosition(spaceship.getPosition() - forward * shipSpeed * deltaTime);
 
-        // -------- Wybor aktywanej kamery -------
-        if (keys[GLFW_KEY_C] && !cKeyPressedLastFrame) {
+        // -------- ORBITY PLANET --------
+        angle1 += orbitSpeed1 * deltaTime;
+        angle2 += orbitSpeed2 * deltaTime;
+        angle3 += orbitSpeed3 * deltaTime;
+
+        planet1.setPosition(glm::vec3(
+            cosf(angle1) * orbitRadius1,
+            0.0f,
+            sinf(angle1) * orbitRadius1
+        ));
+        planet2.setPosition(glm::vec3(
+            cosf(angle2) * orbitRadius2,
+            0.0f,
+            sinf(angle2) * orbitRadius2
+        ));
+        planet3.setPosition(glm::vec3(
+            cosf(angle3) * orbitRadius3,
+            0.0f,
+            sinf(angle3) * orbitRadius3
+        ));
+
+        // -------- WYBÓR KAMERY --------
+        if (keys[GLFW_KEY_C] && !cKeyPressedLastFrame)
+        {
             activeCamera = (activeCamera % 4) + 1;
             cKeyPressedLastFrame = true;
         }
-        if(!keys[GLFW_KEY_C]) {
+        if (!keys[GLFW_KEY_C])
             cKeyPressedLastFrame = false;
-        }
 
         glm::mat4 view;
+        glm::vec3 viewPos;
 
-        if (activeCamera == 1) {
-            view = camera1.GetViewMatrix(); 
-        } else if (activeCamera == 2) {
+        if (activeCamera == 1)
+        {
+            view = camera1.GetViewMatrix();
+            viewPos = camera1.Position;
+        }
+        else if (activeCamera == 2)
+        {
             camera2.Position = planet1.getPosition() + camera2Offset;
-            view = glm::lookAt(camera2.Position, planet1.getPosition(), glm::vec3(0.0f, 1.0f, 0.0f));
-        } else if (activeCamera == 3) {
-            view = glm::lookAt(camera3Position, planet3.getPosition(), glm::vec3(0.0f, 1.0f, 0.0f));
-        } else if (activeCamera == 4) {
-            cameraShip.Position = spaceship.getPosition() + cameraShipOffset;
-            glm::vec3 camTarget = spaceship.getPosition() + forward * 2.0f;
-            view = glm::lookAt(spaceship.getPosition() + cameraShipOffset, camTarget, glm::vec3(0.0f, 1.0f, 0.0f));
+            view = glm::lookAt(
+                camera2.Position,
+                planet1.getPosition(),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+            viewPos = camera2.Position;
+        }
+        else if (activeCamera == 3)
+        {
+            view = glm::lookAt(
+                camera3.Position,
+                planet3.getPosition(),
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+            viewPos = camera3.Position;
+        }
+        else // 4 – kamera za statkiem
+        {
+            glm::vec3 cameraOffset = -forward * 4.0f + glm::vec3(0.0f, 3.0f, 0.0f);
+            cameraShip.Position = spaceship.getPosition() + cameraOffset;
+            glm::vec3 camTarget = spaceship.getPosition() + forward * 5.0f;
+
+            view = glm::lookAt(
+                cameraShip.Position,
+                camTarget,
+                glm::vec3(0.0f, 1.0f, 0.0f)
+            );
+            viewPos = cameraShip.Position;
         }
 
+        // ===================== ŚWIATŁO =====================
+        glm::vec3 lightPos(0.0f, 0.0f, 0.0f); // słońce
 
-        // -------- ŚWIATŁO (SŁOŃCE) --------
-        glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
-        // --- obliczenie kierunku statku ---
-        glm::vec3 shipPos = spaceship.getPosition();
-        glm::vec3 yawPitch = spaceship.getRotation();
-        float yaw2 = yawPitch.y;
-        float pitch = yawPitch.x;
-
-        glm::vec3 shipForward;
-        shipForward.x = cos(pitch) * sin(yaw2);
-        shipForward.y = sin(pitch);
-        shipForward.z = cos(pitch) * cos(yaw2);
-        shipForward = glm::normalize(shipForward);
-
-        // reflektor przed statkiem, nie w środku
-        glm::vec3 spotlightPos = shipPos + shipForward * 1.5f;
-        ///koniec kierunku statku
-
+        // ===== PLANETY + SŁOŃCE (lightingShader) =====
         lightingShader.use();
+        lightingShader.setVec3("viewPos", viewPos);
+        lightingShader.setVec3("lightPos", lightPos);
+        lightingShader.setVec3("lightColor", glm::vec3(1.0f, 0.95f, 0.8f));
+        lightingShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
+        lightingShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
+        lightingShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
 
-        lightingShader.setVec3("spotLightPos", spotlightPos);
-        lightingShader.setVec3("spotLightDir", shipForward);
-        lightingShader.setVec3("spotLightColor", 1.0f, 1.0f, 0.9f);
-        lightingShader.setFloat("cutOff", glm::cos(glm::radians(20.0f)));
-        lightingShader.setFloat("outerCutOff", glm::cos(glm::radians(30.0f)));
-            glUniform3fv(
-            glGetUniformLocation(lightingShader.ID, "lightPos"),
-            1, &lightPos[0]
-        );
-
-        glUniform3fv(
-            glGetUniformLocation(lightingShader.ID, "viewPos"),
-            1, &camera1.Position[0]
-        );
-
-        glUniform3f(
-            glGetUniformLocation(lightingShader.ID, "lightColor"),
-            1.0f, 0.95f, 0.8f
-        );
-
-
-        // -------- ORBITY --------
-        float t = currentFrame;
-
-        planet1.setPosition(glm::vec3(cos(t * 0.8f) * 3.0f, 0.0f, sin(t * 0.8f) * 3.0f));
-        planet2.setPosition(glm::vec3(cos(t * 0.5f) * 5.0f, 0.0f, sin(t * 0.5f) * 5.0f));
-        planet3.setPosition(glm::vec3(cos(t * 1.2f) * 7.0f, 0.0f, sin(t * 1.2f) * 7.0f));
-
-        planet1.setRotation(glm::vec3(0.0f, t, 0.0f));
-        planet2.setRotation(glm::vec3(0.0f, t * 0.7f, 0.0f));
-        planet3.setRotation(glm::vec3(0.0f, t * 1.5f, 0.0f));
-
-        // -------- DRAW SPACESHIP ----------
-        spotlightShader.use();
-        spotlightShader.setVec3("ambientLight", 0.3f, 0.3f, 0.3f); // dodaje trochę światła
-        spotlightShader.setVec3("topLightPos", glm::vec3(0.0f, 5.0f, 0.0f));
-        spotlightShader.setVec3("topLightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-
-        // Ustawienie macierzy
-        spotlightShader.setMat4("view", view);
-        spotlightShader.setMat4("projection", projection);
-
-        // Kolor obiektu
-        spotlightShader.setVec3("objectColor", 0.8f, 0.8f, 0.9f);
-
-        // Ustawienie pozycji obserwatora (bardzo ważne dla Phonga!)
-        spotlightShader.setVec3("viewPos", cameraShip.Position);
-
-        // --------- Dwa reflektory ---------
-
-        // użycie shadera
-        spotlightShader.use();
-        spotlightShader.setMat4("view", view);
-        spotlightShader.setMat4("projection", projection);
-
-        // kolory
-        spotlightShader.setVec3("objectColor", 0.8f, 0.8f, 0.9f);
-        spotlightShader.setVec3("ambientLight", 0.2f, 0.2f, 0.2f);
-
-        spotlightShader.setVec3("topLightPos", glm::vec3(0.0f, 5.0f, 0.0f));
-        spotlightShader.setVec3("topLightColor", glm::vec3(1.0f, 1.0f, 1.0f));
-
-        // reflektor
-        spotlightShader.setVec3("spotLightPos", spotlightPos);
-        spotlightShader.setVec3("spotLightDir", shipForward);
-        spotlightShader.setFloat("cutOff", glm::cos(glm::radians(20.0f)));
-        spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(30.0f)));
-        spotlightShader.setVec3("spotLightColor", 1.0f, 1.0f, 0.9f);
-
-        // bardzo ważne dla speculara:
-        spotlightShader.setVec3("viewPos", cameraShip.Position);
-
-        // rysowanie statku
-        spaceship.draw(view, projection);
-
-
-
-        // -------- DRAW --------
-        // SŁOŃCE
-        glUniform3f(
-            glGetUniformLocation(lightingShader.ID, "objectColor"),
-            1.0f, 0.9f, 0.6f
-        );
-        glUniform1f(
-            glGetUniformLocation(lightingShader.ID, "shininess"),
-            64.0f
-        );
+        // --- Słońce ---
+        lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
+        lightingShader.setFloat("shininess", 64.0f);
         sun.draw(view, projection);
 
-        // PLANETA 1
-        glUniform3f(
-            glGetUniformLocation(lightingShader.ID, "objectColor"),
-            0.4f, 0.6f, 1.0f
-        );
-        glUniform1f(
-            glGetUniformLocation(lightingShader.ID, "shininess"),
-            32.0f
-        );
+        // --- Planeta 1 ---
+        lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.6f, 1.0f));
+        lightingShader.setFloat("shininess", 32.0f);
         planet1.draw(view, projection);
 
-        // PLANETA 2
-        glUniform3f(
-            glGetUniformLocation(lightingShader.ID, "objectColor"),
-            0.8f, 0.4f, 0.4f
-        );
-        glUniform1f(
-            glGetUniformLocation(lightingShader.ID, "shininess"),
-            16.0f
-        );
+        // --- Planeta 2 ---
+        lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.4f, 0.4f));
+        lightingShader.setFloat("shininess", 16.0f);
         planet2.draw(view, projection);
 
-        // PLANETA 3
-        glUniform3f(
-            glGetUniformLocation(lightingShader.ID, "objectColor"),
-            0.4f, 0.8f, 0.5f
-        );
-        glUniform1f(
-            glGetUniformLocation(lightingShader.ID, "shininess"),
-            8.0f
-        );
+        // --- Planeta 3 ---
+        lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.8f, 0.5f));
+        lightingShader.setFloat("shininess", 8.0f);
         planet3.draw(view, projection);
 
+        // ===== STATEK (spotlightShader) =====
+        spotlightShader.use();
+        spotlightShader.setMat4("view", view);
+        spotlightShader.setMat4("projection", projection);
+        spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
+        spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
+        spotlightShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
+        spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
+        spotlightShader.setVec3("viewPos", viewPos);
+
+        glm::vec3 shipPos = spaceship.getPosition();
+
+        // --- reflektor przód ---
+        glm::vec3 frontPos = shipPos + forward * 0.6f;
+        spotlightShader.setVec3("spotLightPos", frontPos);
+        spotlightShader.setVec3("spotLightDir", forward);
+        spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
+        spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
+        spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
+
+        // --- reflektor tył ---
+        glm::vec3 backPos = shipPos - forward * 0.6f;
+        glm::vec3 backDir = -forward;
+        spotlightShader.setVec3("backLightPos", backPos);
+        spotlightShader.setVec3("backLightDir", backDir);
+        spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
+        spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
+        spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
+
+        // --- rysowanie statku ---
+        spaceship.draw(view, projection);
+
+        // --- swap/poll ---
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -452,6 +442,3 @@ int main()
     glfwTerminate();
     return 0;
 }
-
-
-
