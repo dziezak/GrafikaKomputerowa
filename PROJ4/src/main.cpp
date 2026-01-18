@@ -269,9 +269,6 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        // --- input kamery 1 (swobodna) ---
-        camera1.ProcessKeyboard(keys, deltaTime);
-
         // --- czyszczenie ---
         glClearColor(0.02f, 0.02f, 0.06f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -351,18 +348,15 @@ int main()
             glm::vec3 shipPos = spaceship.getPosition();
             glm::vec3 forward = spaceship.getForward();
 
-            // --- offset kamery ---
             glm::vec3 cameraPos =
                 shipPos
-                - forward * 6.0f      // wyraźnie za statkiem
-                + glm::vec3(0.0f, 2.5f, 0.0f);  // trochę nad statkiem
+                - forward * 6.0f
+                + glm::vec3(0.0f, 2.5f, 0.0f); 
 
-            // --- cel kamery: NIE prosto przed siebie ---
-            // patrzymy trochę niżej, aby statek był widoczny
             glm::vec3 cameraTarget =
                 shipPos
                 + forward * 10.0f
-                + glm::vec3(0.0f, -1.5f, 0.0f);   // kluczowe: patrzymy lekko w dół
+                + glm::vec3(0.0f, -1.5f, 0.0f); 
 
             view = glm::lookAt(
                 cameraPos,
@@ -377,6 +371,9 @@ int main()
 
         // ===================== ŚWIATŁO =====================
         glm::vec3 lightPos(0.0f, 0.0f, 0.0f); // słońce
+        glm::vec3 shipPos = spaceship.getPosition();
+        glm::vec3 frontPos = shipPos + forward * 1.2f;
+        glm::vec3 backPos = shipPos - forward * 1.2f;
 
         // ===== PLANETY + SŁOŃCE (lightingShader) =====
         lightingShader.use();
@@ -386,6 +383,21 @@ int main()
         lightingShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
         lightingShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
         lightingShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
+
+        // ===== REFLEKTOR PRZEDNI =====
+        lightingShader.setVec3("spotLightPos", backPos);
+        lightingShader.setVec3("spotLightDir", -forward);
+        lightingShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
+        lightingShader.setFloat("cutOff", glm::cos(glm::radians(10.0f)));
+        lightingShader.setFloat("outerCutOff", glm::cos(glm::radians(15.0f)));
+
+        // ===== REFLEKTOR TYLNY =====
+        lightingShader.setVec3("backLightPos", frontPos);
+        lightingShader.setVec3("backLightDir", forward);
+        lightingShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
+        lightingShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
+        lightingShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
+
 
         // --- Słońce ---
         lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
@@ -417,10 +429,8 @@ int main()
         spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
         spotlightShader.setVec3("viewPos", viewPos);
 
-        glm::vec3 shipPos = spaceship.getPosition();
 
         // --- reflektor przód ---
-        glm::vec3 frontPos = shipPos + forward * 0.6f;
         spotlightShader.setVec3("spotLightPos", frontPos);
         spotlightShader.setVec3("spotLightDir", forward);
         spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
@@ -428,10 +438,9 @@ int main()
         spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
 
         // --- reflektor tył ---
-        glm::vec3 backPos = shipPos - forward * 0.6f;
-        glm::vec3 backDir = -forward;
+        //glm::vec3 backDir = -forward;
         spotlightShader.setVec3("backLightPos", backPos);
-        spotlightShader.setVec3("backLightDir", backDir);
+        spotlightShader.setVec3("backLightDir", -forward);
         spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
         spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
         spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
