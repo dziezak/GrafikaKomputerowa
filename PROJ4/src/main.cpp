@@ -151,6 +151,8 @@ glm::vec3 computeShipForward(const glm::vec3& rotation)
 // ===================== MAIN =====================
 int main()
 {
+    float spotYawOffset = 0.0f;
+    float spotPitchOffset = 0.0f;
     // -------- GLFW --------
     if (!glfwInit())
     {
@@ -236,6 +238,11 @@ int main()
         &spotlightShader
     );
     Spaceship spaceship(&spaceshipObj);
+    Object3D moon(
+        sphereVertices.data(), static_cast<unsigned int>(sphereVertices.size()),
+        sphereIndices.data(), static_cast<unsigned int>(sphereIndices.size()),
+        &lightingShader
+    );
 
 
     sun.setScale(glm::vec3(1.5f));
@@ -244,6 +251,7 @@ int main()
     planet1.setScale(glm::vec3(0.4f));
     planet2.setScale(glm::vec3(0.6f));
     planet3.setScale(glm::vec3(0.3f));
+    moon.setScale(glm::vec3(0.05f));
 
     spaceship.setScale(glm::vec3(0.2f));
     spaceship.setPosition(glm::vec3(0.0f, 0.0f, -5.0f));
@@ -252,6 +260,7 @@ int main()
     float angle1 = 0.0f;
     float angle2 = 0.0f;
     float angle3 = 0.0f;
+    float moonAngle = 0.0f;
 
     float orbitSpeed1 = 0.5f;
     float orbitSpeed2 = 0.3f;
@@ -285,11 +294,23 @@ int main()
 
         spaceship.update(keys, deltaTime);
         glm::vec3 forward = spaceship.getForward(); 
+        glm::vec3 baseDir = forward;
+
+        glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 right = glm::normalize(glm::cross(baseDir, up));
+        up = glm::normalize(glm::cross(right, baseDir));
+
+        glm::vec3 spotDir = glm::normalize(
+            baseDir
+            + right * (float)sin(spotYawOffset)
+            + up    * (float)sin(spotPitchOffset)
+        );
 
         // -------- ORBITY PLANET --------
         angle1 += orbitSpeed1 * deltaTime;
         angle2 += orbitSpeed2 * deltaTime;
         angle3 += orbitSpeed3 * deltaTime;
+        moonAngle += deltaTime * 3.0f;
 
         planet1.setPosition(glm::vec3(
             cosf(angle1) * orbitRadius1,
@@ -306,6 +327,13 @@ int main()
             0.0f,
             sinf(angle3) * orbitRadius3
         ));
+        glm::vec3 planet1Pos = planet1.getPosition();
+        glm::vec3 moonPos = planet1Pos + glm::vec3(
+            cos(moonAngle) * 0.8f,
+            0.0f,
+            sin(moonAngle) * 0.8f
+        );
+        moon.setPosition(moonPos);
 
         // -------- WYBÓR KAMERY --------
         if (keys[GLFW_KEY_C] && !cKeyPressedLastFrame)
@@ -367,6 +395,21 @@ int main()
             viewPos = cameraPos;
         }
 
+        float spotRotateSpeed = glm::radians(45.0f);
+
+        if (keys[GLFW_KEY_LEFT])
+            spotYawOffset -= spotRotateSpeed * deltaTime;
+        if (keys[GLFW_KEY_RIGHT])
+            spotYawOffset += spotRotateSpeed * deltaTime;
+        if (keys[GLFW_KEY_UP])
+            spotPitchOffset += spotRotateSpeed * deltaTime;
+        if (keys[GLFW_KEY_DOWN])
+            spotPitchOffset -= spotRotateSpeed * deltaTime;
+
+        float maxPitch = glm::radians(60.0f);
+        if (spotPitchOffset >  maxPitch) spotPitchOffset =  maxPitch;
+        if (spotPitchOffset < -maxPitch) spotPitchOffset = -maxPitch;
+
 
 
         // ===================== ŚWIATŁO =====================
@@ -386,7 +429,7 @@ int main()
 
         // ===== REFLEKTOR PRZEDNI =====
         lightingShader.setVec3("spotLightPos", backPos);
-        lightingShader.setVec3("spotLightDir", -forward);
+        lightingShader.setVec3("spotLightDir", -spotDir);
         lightingShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
         lightingShader.setFloat("cutOff", glm::cos(glm::radians(10.0f)));
         lightingShader.setFloat("outerCutOff", glm::cos(glm::radians(15.0f)));
@@ -432,7 +475,7 @@ int main()
 
         // --- reflektor przód ---
         spotlightShader.setVec3("spotLightPos", frontPos);
-        spotlightShader.setVec3("spotLightDir", forward);
+        spotlightShader.setVec3("spotLightDir", -spotDir);
         spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
         spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
         spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
@@ -440,13 +483,13 @@ int main()
         // --- reflektor tył ---
         //glm::vec3 backDir = -forward;
         spotlightShader.setVec3("backLightPos", backPos);
-        spotlightShader.setVec3("backLightDir", -forward);
+        spotlightShader.setVec3("backLightDir", forward);
         spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
         spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
         spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
 
         // --- rysowanie statku ---
-        //spaceship.draw(view, projection);
+        moon.draw(view, projection);
         spaceshipObj.draw(view, projection);
 
         // --- swap/poll ---
