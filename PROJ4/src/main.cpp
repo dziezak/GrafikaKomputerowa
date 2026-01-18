@@ -22,6 +22,7 @@ bool keys[1024] = { false };
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+
 // ===================== CALLBACKI =====================
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -455,7 +456,18 @@ int main()
         fogDensity = glm::clamp(fogDensity, 0.0f, 2.0f);
 
 
-
+        // ===================== NOC/DZIEN =====================
+        static bool isNight = false;
+        static bool togglePressed = false;
+        if(keys[GLFW_KEY_B] && !togglePressed)
+        {
+            isNight = !isNight;
+            togglePressed = true;
+        }
+        if(!keys[GLFW_KEY_B])
+        {
+            togglePressed = false;
+        }
 
 
         // ===================== ŚWIATŁO =====================
@@ -468,7 +480,15 @@ int main()
         lightingShader.use();
         lightingShader.setVec3("viewPos", viewPos);
         lightingShader.setVec3("lightPos", lightPos);
-        lightingShader.setVec3("lightColor", glm::vec3(1.0f, 0.95f, 0.8f));
+
+        if (!isNight)
+        {
+            lightingShader.setVec3("lightColor", glm::vec3(1.0f, 0.95f, 0.8f));
+        }
+        else
+        {
+            lightingShader.setVec3("lightColor", glm::vec3(0.05f, 0.3f, 0.6f));
+        }
         lightingShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
         lightingShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
         lightingShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
@@ -495,7 +515,11 @@ int main()
 
 
         // --- Słońce ---
-        lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
+        if(!isNight){
+            lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
+        }else{
+            lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.85f));
+        }
         lightingShader.setFloat("shininess", 64.0f);
         sun.draw(view, projection);
 
