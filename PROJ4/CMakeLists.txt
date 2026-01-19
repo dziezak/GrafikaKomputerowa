@@ -12,6 +12,7 @@ add_executable(PROJ4
     src/Mirror.cpp
     src/MirrorCamera.cpp
     src/ReflectionBuffer.cpp
+    src/MirrorSurface.cpp
 )
 
 # Include directories

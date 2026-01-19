@@ -5,6 +5,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj"
   "CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj.d"
+  "CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj"
+  "CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj"
   "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj.d"
   "CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj"

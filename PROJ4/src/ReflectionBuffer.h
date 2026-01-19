@@ -10,4 +10,5 @@ public:
     ReflectionBuffer(int width, int height);
     void bind();
     void unbind();
+    void resize(int width, int height);
 };

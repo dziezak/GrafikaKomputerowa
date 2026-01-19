@@ -36,3 +36,13 @@ void ReflectionBuffer::unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
+
+void ReflectionBuffer::resize(int width, int height)
+{
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, RBO);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
+}

@@ -12,6 +12,7 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Camera.cpp" "CMakeFiles/PROJ4.dir/src/Camera.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Camera.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Mirror.cpp" "CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/MirrorCamera.cpp" "CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj.d"
+  "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/MirrorSurface.cpp" "CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Object3D.cpp" "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/ReflectionBuffer.cpp" "CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj.d"
   "C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Shader.cpp" "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj" "gcc" "CMakeFiles/PROJ4.dir/src/Shader.cpp.obj.d"

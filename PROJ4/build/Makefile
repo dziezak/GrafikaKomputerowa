@@ -200,6 +200,30 @@ src/MirrorCamera.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.s
 .PHONY : src/MirrorCamera.cpp.s
 
+src/MirrorSurface.obj: src/MirrorSurface.cpp.obj
+.PHONY : src/MirrorSurface.obj
+
+# target to build an object file
+src/MirrorSurface.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj
+.PHONY : src/MirrorSurface.cpp.obj
+
+src/MirrorSurface.i: src/MirrorSurface.cpp.i
+.PHONY : src/MirrorSurface.i
+
+# target to preprocess a source file
+src/MirrorSurface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.i
+.PHONY : src/MirrorSurface.cpp.i
+
+src/MirrorSurface.s: src/MirrorSurface.cpp.s
+.PHONY : src/MirrorSurface.s
+
+# target to generate assembly for a file
+src/MirrorSurface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.s
+.PHONY : src/MirrorSurface.cpp.s
+
 src/Object3D.obj: src/Object3D.cpp.obj
 .PHONY : src/Object3D.obj
 
@@ -362,6 +386,9 @@ help:
 	@echo ... src/MirrorCamera.obj
 	@echo ... src/MirrorCamera.i
 	@echo ... src/MirrorCamera.s
+	@echo ... src/MirrorSurface.obj
+	@echo ... src/MirrorSurface.i
+	@echo ... src/MirrorSurface.s
 	@echo ... src/Object3D.obj
 	@echo ... src/Object3D.i
 	@echo ... src/Object3D.s
