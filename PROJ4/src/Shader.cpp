@@ -23,6 +23,13 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     const char* vShaderCode = vertexCode.c_str();
     const char* fShaderCode = fragmentCode.c_str();
 
+    std::cout << "Loading vertex shader from: " << vertexPath << std::endl;
+    std::cout << "Loading fragment shader from: " << fragmentPath << std::endl;
+    std::cout << "=== VERTEX SHADER SOURCE ===\n";
+    std::cout << vertexCode << "\n\n";
+
+
+
     // 2. kompilacja vertex shader
     unsigned int vertex, fragment;
     int success;
@@ -90,4 +97,9 @@ void Shader::setVec3(const std::string& name, float x, float y, float z) const
 void Shader::setFloat(const std::string& name, float value) const
 {
     glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setInt(const std::string &name, int value) const
+{
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
 }

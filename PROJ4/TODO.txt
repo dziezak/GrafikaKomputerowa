@@ -1,5 +1,3 @@
 światło od góry
-Oświetlenie liczone w układzie kamery	❗ DO ZROBIENIA
 Lustro na scenie	❗ DO ZROBIENIA
 Przełączanie Phong/Blinn	❗ DO ZROBIENIA
-poprawic wyglad statku

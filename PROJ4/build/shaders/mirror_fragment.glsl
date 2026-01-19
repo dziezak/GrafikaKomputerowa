@@ -1,0 +1,11 @@
+#version 330 core
+out vec4 FragColor;
+in vec2 TexCoord;
+
+uniform sampler2D reflectionTex;
+
+void main()
+{
+    FragColor = texture(reflectionTex, TexCoord);
+    //FragColor = vec4(1.0, 0.0, 1.0, 1.0); // różowy
+}

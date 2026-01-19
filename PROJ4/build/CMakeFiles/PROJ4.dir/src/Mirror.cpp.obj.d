@@ -1,5 +1,7 @@
-CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\main.cpp \
+CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj: \
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.cpp \
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.h \
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Object3D.h \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/include/glad/glad.h \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/include/KHR/khrplatform.h \
  C:/Strawberry/c/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stdint.h \
@@ -13,7 +15,6 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:/Strawberry/c/x86_64-w64-mingw32/include/sdks/_mingw_ddk.h \
  C:/Strawberry/c/lib/gcc/x86_64-w64-mingw32/13.2.0/include/stddef.h \
  C:/Strawberry/c/x86_64-w64-mingw32/include/stddef.h \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/GLFW/glfw3.h \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/glm.hpp \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/_fixes.hpp \
  C:/Strawberry/c/include/c++/13.2.0/cmath \
@@ -254,23 +255,10 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/type_half.inl \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/integer.hpp \
  C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/detail/func_integer.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/matrix_transform.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_projection.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/constants.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/scalar_constants.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/scalar_constants.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/constants.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_projection.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_clip_space.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_clip_space.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_transform.hpp \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/ext/matrix_transform.inl \
- C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/include/glm/gtc/matrix_transform.inl \
- C:/Strawberry/c/include/c++/13.2.0/iostream \
- C:/Strawberry/c/include/c++/13.2.0/ostream \
- C:/Strawberry/c/include/c++/13.2.0/ios \
- C:/Strawberry/c/include/c++/13.2.0/iosfwd \
+ C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Shader.h \
+ C:/Strawberry/c/include/c++/13.2.0/string \
  C:/Strawberry/c/include/c++/13.2.0/bits/stringfwd.h \
+ C:/Strawberry/c/include/c++/13.2.0/bits/char_traits.h \
  C:/Strawberry/c/include/c++/13.2.0/bits/postypes.h \
  C:/Strawberry/c/include/c++/13.2.0/cwchar \
  C:/Strawberry/c/x86_64-w64-mingw32/include/wchar.h \
@@ -279,39 +267,15 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:/Strawberry/c/x86_64-w64-mingw32/include/_mingw_stat64.h \
  C:/Strawberry/c/x86_64-w64-mingw32/include/swprintf.inl \
  C:/Strawberry/c/x86_64-w64-mingw32/include/sec_api/wchar_s.h \
- C:/Strawberry/c/include/c++/13.2.0/exception \
- C:/Strawberry/c/include/c++/13.2.0/bits/exception_ptr.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/cxxabi_init_exception.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/nested_exception.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/char_traits.h \
  C:/Strawberry/c/include/c++/13.2.0/bits/localefwd.h \
  C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/c++locale.h \
  C:/Strawberry/c/include/c++/13.2.0/clocale \
  C:/Strawberry/c/x86_64-w64-mingw32/include/locale.h \
  C:/Strawberry/c/x86_64-w64-mingw32/include/stdio.h \
  C:/Strawberry/c/x86_64-w64-mingw32/include/sec_api/stdio_s.h \
+ C:/Strawberry/c/include/c++/13.2.0/iosfwd \
  C:/Strawberry/c/include/c++/13.2.0/cctype \
  C:/Strawberry/c/x86_64-w64-mingw32/include/ctype.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/ios_base.h \
- C:/Strawberry/c/include/c++/13.2.0/ext/atomicity.h \
- C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/gthr.h \
- C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/gthr-default.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/pthread.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/sys/types.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/process.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/corecrt_startup.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/signal.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/pthread_signal.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/time.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/sys/timeb.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/sec_api/sys/timeb_s.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/_timeval.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/pthread_time.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/pthread_compat.h \
- C:/Strawberry/c/x86_64-w64-mingw32/include/pthread_unistd.h \
- C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/atomic_word.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/locale_classes.h \
- C:/Strawberry/c/include/c++/13.2.0/string \
  C:/Strawberry/c/include/c++/13.2.0/bits/ostream_insert.h \
  C:/Strawberry/c/include/c++/13.2.0/bits/cxxabi_forced.h \
  C:/Strawberry/c/include/c++/13.2.0/bits/basic_string.h \
@@ -321,29 +285,4 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:/Strawberry/c/include/c++/13.2.0/cstdio \
  C:/Strawberry/c/include/c++/13.2.0/cerrno \
  C:/Strawberry/c/include/c++/13.2.0/bits/charconv.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/basic_string.tcc \
- C:/Strawberry/c/include/c++/13.2.0/bits/locale_classes.tcc \
- C:/Strawberry/c/include/c++/13.2.0/system_error \
- C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/error_constants.h \
- C:/Strawberry/c/include/c++/13.2.0/stdexcept \
- C:/Strawberry/c/include/c++/13.2.0/streambuf \
- C:/Strawberry/c/include/c++/13.2.0/bits/streambuf.tcc \
- C:/Strawberry/c/include/c++/13.2.0/bits/basic_ios.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/locale_facets.h \
- C:/Strawberry/c/include/c++/13.2.0/cwctype \
- C:/Strawberry/c/x86_64-w64-mingw32/include/wctype.h \
- C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/ctype_base.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/streambuf_iterator.h \
- C:/Strawberry/c/include/c++/13.2.0/x86_64-w64-mingw32/bits/ctype_inline.h \
- C:/Strawberry/c/include/c++/13.2.0/bits/locale_facets.tcc \
- C:/Strawberry/c/include/c++/13.2.0/bits/basic_ios.tcc \
- C:/Strawberry/c/include/c++/13.2.0/bits/ostream.tcc \
- C:/Strawberry/c/include/c++/13.2.0/istream \
- C:/Strawberry/c/include/c++/13.2.0/bits/istream.tcc \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Shader.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Object3D.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Camera.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Spaceship.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorCamera.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\ReflectionBuffer.h
+ C:/Strawberry/c/include/c++/13.2.0/bits/basic_string.tcc

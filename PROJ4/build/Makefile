@@ -152,6 +152,54 @@ src/Camera.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Camera.cpp.s
 .PHONY : src/Camera.cpp.s
 
+src/Mirror.obj: src/Mirror.cpp.obj
+.PHONY : src/Mirror.obj
+
+# target to build an object file
+src/Mirror.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj
+.PHONY : src/Mirror.cpp.obj
+
+src/Mirror.i: src/Mirror.cpp.i
+.PHONY : src/Mirror.i
+
+# target to preprocess a source file
+src/Mirror.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Mirror.cpp.i
+.PHONY : src/Mirror.cpp.i
+
+src/Mirror.s: src/Mirror.cpp.s
+.PHONY : src/Mirror.s
+
+# target to generate assembly for a file
+src/Mirror.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Mirror.cpp.s
+.PHONY : src/Mirror.cpp.s
+
+src/MirrorCamera.obj: src/MirrorCamera.cpp.obj
+.PHONY : src/MirrorCamera.obj
+
+# target to build an object file
+src/MirrorCamera.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj
+.PHONY : src/MirrorCamera.cpp.obj
+
+src/MirrorCamera.i: src/MirrorCamera.cpp.i
+.PHONY : src/MirrorCamera.i
+
+# target to preprocess a source file
+src/MirrorCamera.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.i
+.PHONY : src/MirrorCamera.cpp.i
+
+src/MirrorCamera.s: src/MirrorCamera.cpp.s
+.PHONY : src/MirrorCamera.s
+
+# target to generate assembly for a file
+src/MirrorCamera.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.s
+.PHONY : src/MirrorCamera.cpp.s
+
 src/Object3D.obj: src/Object3D.cpp.obj
 .PHONY : src/Object3D.obj
 
@@ -175,6 +223,30 @@ src/Object3D.s: src/Object3D.cpp.s
 src/Object3D.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/Object3D.cpp.s
 .PHONY : src/Object3D.cpp.s
+
+src/ReflectionBuffer.obj: src/ReflectionBuffer.cpp.obj
+.PHONY : src/ReflectionBuffer.obj
+
+# target to build an object file
+src/ReflectionBuffer.cpp.obj:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj
+.PHONY : src/ReflectionBuffer.cpp.obj
+
+src/ReflectionBuffer.i: src/ReflectionBuffer.cpp.i
+.PHONY : src/ReflectionBuffer.i
+
+# target to preprocess a source file
+src/ReflectionBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.i
+.PHONY : src/ReflectionBuffer.cpp.i
+
+src/ReflectionBuffer.s: src/ReflectionBuffer.cpp.s
+.PHONY : src/ReflectionBuffer.s
+
+# target to generate assembly for a file
+src/ReflectionBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles\PROJ4.dir\build.make CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.s
+.PHONY : src/ReflectionBuffer.cpp.s
 
 src/Shader.obj: src/Shader.cpp.obj
 .PHONY : src/Shader.obj
@@ -284,9 +356,18 @@ help:
 	@echo ... src/Camera.obj
 	@echo ... src/Camera.i
 	@echo ... src/Camera.s
+	@echo ... src/Mirror.obj
+	@echo ... src/Mirror.i
+	@echo ... src/Mirror.s
+	@echo ... src/MirrorCamera.obj
+	@echo ... src/MirrorCamera.i
+	@echo ... src/MirrorCamera.s
 	@echo ... src/Object3D.obj
 	@echo ... src/Object3D.i
 	@echo ... src/Object3D.s
+	@echo ... src/ReflectionBuffer.obj
+	@echo ... src/ReflectionBuffer.i
+	@echo ... src/ReflectionBuffer.s
 	@echo ... src/Shader.obj
 	@echo ... src/Shader.i
 	@echo ... src/Shader.s

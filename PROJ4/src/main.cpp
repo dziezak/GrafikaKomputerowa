@@ -12,6 +12,9 @@
 #include "Object3D.h"
 #include "Camera.h"
 #include "Spaceship.h"
+#include "Mirror.h"
+#include "MirrorCamera.h"
+#include "ReflectionBuffer.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -149,6 +152,7 @@ glm::vec3 computeShipForward(const glm::vec3& rotation)
     return glm::normalize(forward);
 }
 
+
 // ===================== MAIN =====================
 int main()
 {
@@ -192,15 +196,19 @@ int main()
     // -------- SHADER --------
     Shader lightingShader(
         "./shaders/light_vertex.glsl",
-        "./shaders/light_fragment2.glsl"
+        "./shaders/light_fragment_camera.glsl"
     );
     Shader spotlightShader(
         "./shaders/light_vertex.glsl",
-        "./shaders/spotlight_fragment.glsl"
+        "./shaders/spotlight_fragment_camera.glsl"
     );
     Shader fogShader(
         "./shaders/light_vertex.glsl", 
         "./shaders/fog_fragment.glsl"
+    );
+    Shader mirrorShader(
+        "./shaders/mirror_vertex.glsl", 
+        "./shaders/mirror_fragment.glsl"
     );
 
 
@@ -264,6 +272,7 @@ int main()
     );
 
 
+
     sun.setScale(glm::vec3(1.3f));
     sun.setPosition(glm::vec3(0.0f));
 
@@ -295,6 +304,17 @@ int main()
     float orbitRadius2 = 7.0f;
     float orbitRadius3 = 10.0f;
     float orbitRadius4 = 13.0f;
+
+    // -------- LUSTRO --------
+    ReflectionBuffer reflection(800, 600);
+
+    MirrorCamera mirrorCam(
+        spaceship.getPosition() + glm::vec3(0,0,-1),
+        glm::vec3(0,0,1)
+    );
+    Mirror mirrorObj(1.0f, 1.0f, &mirrorShader);
+    mirrorObj.setPosition(spaceship.getPosition() + glm::vec3(0,0,-1));
+    
 
     // ===================== PĘTLA GŁÓWNA =====================
     while (!glfwWindowShouldClose(window))
@@ -427,6 +447,7 @@ int main()
             viewPos = cameraPos;
         }
 
+
         float spotRotateSpeed = glm::radians(45.0f);
 
         if (keys[GLFW_KEY_LEFT])
@@ -442,10 +463,22 @@ int main()
         if (spotPitchOffset >  maxPitch) spotPitchOffset =  maxPitch;
         if (spotPitchOffset < -maxPitch) spotPitchOffset = -maxPitch;
 
+        // LUSTRO
+        reflection.bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glm::mat4 reflectedView =
+            mirrorCam.computeReflectedView(viewPos, viewPos + forward);
+
+        sun.draw(reflectedView, projection);
+
+        reflection.unbind();
+
+
         // ===================== MGLA =====================
         static float fogDensity = 0.01f;
-        //glm::vec3 fogColor = glm::vec3(0.25f, 0.28f, 0.32f);
-        glm::vec3 fogColor = glm::vec3(0.0f, 0.0f, 0.0f);
+        //glm::vec3 fogColor = glm::vec3(0.25f, 0.28f, 0.32f); // szara mgla
+        glm::vec3 fogColor = glm::vec3(0.0f, 0.0f, 0.0f);// better: czarna mgla
 
         if (keys[GLFW_KEY_M])
             fogDensity += 0.3f * deltaTime;
@@ -474,77 +507,82 @@ int main()
         glm::vec3 lightPos(0.0f, 0.0f, 0.0f); // słońce
         glm::vec3 shipPos = spaceship.getPosition();
         glm::vec3 frontPos = shipPos + forward * 1.2f;
-        glm::vec3 backPos = shipPos - forward * 1.2f;
+        glm::vec3 backPos  = shipPos - forward * 1.2f;
+
+        // RYSOWANIE LUSTRA
+        glm::vec3 shipBack = shipPos + spaceship.getForward() * (-0.15f);
+
+        mirrorObj.setPosition(shipBack);
+        mirrorObj.setRotation(glm::vec3(0, spaceship.getRotation().y + glm::radians(180.0f), 0));
+
+
+
+        // ===== TRANSFORMACJA ŚWIATEŁ DO CAMERA SPACE =====
+        glm::vec3 lightPosCam     = glm::vec3(view * glm::vec4(lightPos, 1.0));
+        glm::vec3 spotLightPosCam = glm::vec3(view * glm::vec4(backPos, 1.0));
+        glm::vec3 backLightPosCam = glm::vec3(view * glm::vec4(frontPos, 1.0));
+        glm::vec3 topLightPosCam  = glm::vec3(view * glm::vec4(glm::vec3(0,8,0), 1.0));
+
+        glm::vec3 spotLightDirCam = glm::normalize(glm::mat3(view) * (-spotDir));
+        glm::vec3 backLightDirCam = glm::normalize(glm::mat3(view) * forward);
 
         // ===== PLANETY + SŁOŃCE (lightingShader) =====
         lightingShader.use();
-        lightingShader.setVec3("viewPos", viewPos);
-        lightingShader.setVec3("lightPos", lightPos);
+
+        lightingShader.setVec3("lightPos", lightPosCam);
 
         if (!isNight)
-        {
             lightingShader.setVec3("lightColor", glm::vec3(1.0f, 0.95f, 0.8f));
-        }
         else
-        {
             lightingShader.setVec3("lightColor", glm::vec3(0.05f, 0.3f, 0.6f));
-        }
+
         lightingShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
-        lightingShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
+        lightingShader.setVec3("topLightPos", topLightPosCam);
         lightingShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
 
-        // ===== Mgla 
-        lightingShader.setVec3("fogCenter", glm::vec3(0.0f, 0.0f, 0.0f)); // Słońce 
-        lightingShader.setFloat("fogRadius", 8.0f); // jak daleko mgła sięga 
-        lightingShader.setFloat("fogStrength", 0.8f); // jak mocna mgła 
+        // ===== Mgła =====
         lightingShader.setVec3("fogColor", fogColor);
+        lightingShader.setFloat("fogDensity", fogDensity);
 
         // ===== REFLEKTOR PRZEDNI =====
-        lightingShader.setVec3("spotLightPos", backPos);
-        lightingShader.setVec3("spotLightDir", -spotDir);
+        lightingShader.setVec3("spotLightPos", spotLightPosCam);
+        lightingShader.setVec3("spotLightDir", spotLightDirCam);
         lightingShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
         lightingShader.setFloat("cutOff", glm::cos(glm::radians(10.0f)));
         lightingShader.setFloat("outerCutOff", glm::cos(glm::radians(15.0f)));
 
         // ===== REFLEKTOR TYLNY =====
-        lightingShader.setVec3("backLightPos", frontPos);
-        lightingShader.setVec3("backLightDir", forward);
+        lightingShader.setVec3("backLightPos", backLightPosCam);
+        lightingShader.setVec3("backLightDir", backLightDirCam);
         lightingShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
         lightingShader.setFloat("backCutOff", glm::cos(glm::radians(5.0f)));
         lightingShader.setFloat("backOuterCutOff", glm::cos(glm::radians(10.0f)));
 
-
         // --- Słońce ---
-        if(!isNight){
+        if (!isNight)
             lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
-        }else{
+        else
             lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.85f));
-        }
+
         lightingShader.setFloat("shininess", 64.0f);
         sun.draw(view, projection);
 
-        // --- Planeta 1 ---
+        // --- Planety ---
         lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.6f, 1.0f));
         lightingShader.setFloat("shininess", 32.0f);
         planet1.draw(view, projection);
 
-        // --- Planeta 2 ---
         lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.4f, 0.4f));
         lightingShader.setFloat("shininess", 16.0f);
         planet2.draw(view, projection);
 
-        // --- Planeta 3 ---
         lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.8f, 0.5f));
         lightingShader.setFloat("shininess", 8.0f);
         planet3.draw(view, projection);
 
-        // --- Planeta 4 ---
         lightingShader.setVec3("objectColor", glm::vec3(0.6f, 0.4f, 0.9f));
         lightingShader.setFloat("shininess", 4.0f);
         planet4.draw(view, projection);
-
-        // --- mgla - kolor planet ---
-        lightingShader.setFloat("fogDensity", fogDensity);
 
         // ===== STATEK (spotlightShader) =====
         spotlightShader.use();
@@ -552,52 +590,52 @@ int main()
         spotlightShader.setMat4("projection", projection);
         spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
         spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
-        spotlightShader.setVec3("topLightPos", glm::vec3(0.0f, 8.0f, 0.0f));
+        spotlightShader.setVec3("topLightPos", topLightPosCam);
         spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
-        spotlightShader.setVec3("viewPos", viewPos);
-
 
         // --- reflektor przód ---
-        spotlightShader.setVec3("spotLightPos", frontPos);
-        spotlightShader.setVec3("spotLightDir", -spotDir);
+        spotlightShader.setVec3("spotLightPos", spotLightPosCam);
+        spotlightShader.setVec3("spotLightDir", spotLightDirCam);
         spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
         spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
         spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
 
         // --- reflektor tył ---
-        //glm::vec3 backDir = -forward;
-        spotlightShader.setVec3("backLightPos", backPos);
-        spotlightShader.setVec3("backLightDir", forward);
+        spotlightShader.setVec3("backLightPos", backLightPosCam);
+        spotlightShader.setVec3("backLightDir", backLightDirCam);
         spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
         spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
         spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
 
-        //--- mgla kolor planet ---
+        // --- mgła ---
         spotlightShader.setFloat("fogDensity", fogDensity);
         spotlightShader.setVec3("fogColor", fogColor);
 
-
         // --- rysowanie statku ---
         moon.draw(view, projection);
+        glDisable(GL_CULL_FACE);
         spaceshipObj.draw(view, projection);
+        glEnable(GL_CULL_FACE);
 
         // ===================== MGŁA (fogSphere) =====================
-        glDepthMask(GL_FALSE); // mgła nie zapisuje głębi
+        glDepthMask(GL_FALSE);
         glDisable(GL_CULL_FACE);
 
         fogShader.use();
         fogShader.setVec3("fogColor", fogColor);
         fogShader.setFloat("fogDensity", fogDensity);
-
         fogSphere.draw(view, projection);
 
         glEnable(GL_CULL_FACE);
-        glDepthMask(GL_TRUE); // przywrócenie normalnego depth write
+        glDepthMask(GL_TRUE);
+        // ===================== LUSTRO =====================
+        //renderScene(view, projection);
+        //sun.draw(reflectedView, projection);
 
-        // --- swap/poll ---
+
+        
         glfwSwapBuffers(window);
         glfwPollEvents();
-
     }
 
     glfwTerminate();
