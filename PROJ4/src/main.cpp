@@ -323,7 +323,7 @@ int main()
 // --- parametry lustra ---
 float mirrorAngle = 0.0f;
 float mirrorOrbitRadius = 8.0f;
-glm::vec3 mirrorPos(0.0f, 0.0f, -5.0f); // Inicjalizacja domyślna
+glm::vec3 mirrorPos(0.0f, 0.0f, -20.0f); // Inicjalizacja domyślna
 
     // ===================== PĘTLA GŁÓWNA =====================
     while (!glfwWindowShouldClose(window))
@@ -689,39 +689,50 @@ lightingShader.setFloat("shininess", 64.0f);
 sun.draw(reflectedView, projection);
 // --- Rysowanie statku w odbiciu ---
 spotlightShader.use();
-spotlightShader.setBool("useBlinn", useBlinn);
 spotlightShader.setMat4("view", reflectedView); 
 spotlightShader.setMat4("projection", projection);
 
+// 1. POZYCJA KAMERY (Dla odblasków)
 glm::vec3 reflectedViewPos = viewPos;
 reflectedViewPos.z = mirrorPos.z - (viewPos.z - mirrorPos.z);
 spotlightShader.setVec3("viewPos", reflectedViewPos);
+
+// 2. PODSTAWOWE KOLORY
 spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
 spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
-// --- TO DOPISZ: Brakujące parametry oświetlenia dla statku ---
+
+// 3. ŚWIATŁO GÓRNE
 glm::vec3 topLightPosRefl = glm::vec3(reflectedView * glm::vec4(glm::vec3(0, 8, 0), 1.0));
 spotlightShader.setVec3("topLightPos", topLightPosRefl);
 spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
-spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
+
+// 4. MGŁA
 spotlightShader.setFloat("fogDensity", fogDensity);
 spotlightShader.setVec3("fogColor", fogColor);
-// -----------------------------------------------------------
 
-// Ponownie przeliczamy światła specyficzne dla shadera statku
+// 5. REFLEKTORY - TU BYŁY BRAKI KOLORÓW!
 spotlightShader.setVec3("spotLightPos", spotLightPosRefl);
 spotlightShader.setVec3("spotLightDir", spotLightDirRefl);
-spotlightShader.setVec3("backLightPos", backLightPosRefl);
-spotlightShader.setVec3("backLightDir", backLightDirRefl);
-
-// Ustawienie odcięć (cutOff) - jeśli shader ich nie pamięta
+// --- WAŻNE: Dodajemy kolor, bez tego światło nie świeci! ---
+spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f)); // <--- DODANO
 spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
 spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
+
+spotlightShader.setVec3("backLightPos", backLightPosRefl);
+spotlightShader.setVec3("backLightDir", backLightDirRefl);
+// --- WAŻNE: Dodajemy kolor drugiego światła ---
+spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f)); // <--- DODANO
 spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
 spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
 
-spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
+// 6. MODEL I RYSOWANIE
+// Ponieważ Spaceship.cpp aktualizuje spaceshipObj bezpośrednio, nie musimy robić setModelMatrix ręcznie,
+// o ile spaceshipObj.draw() bierze swoją wewnętrzną pozycję.
 
+// --- WAŻNE: Skoro normalnie wyłączasz culling, tu też musisz! ---
+glDisable(GL_CULL_FACE); // <--- DODANO (Kluczowe dla widoczności statku)
 spaceshipObj.draw(reflectedView, projection);
+glEnable(GL_CULL_FACE);  // Przywracamy dla reszty sceny
 
 
 
