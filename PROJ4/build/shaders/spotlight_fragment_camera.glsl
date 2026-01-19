@@ -23,6 +23,9 @@ uniform vec3 topLightColor;
 
 uniform vec3 objectColor;
 
+// ⭐ PHONG / BLINN
+uniform bool useBlinn;
+
 void main()
 {
     vec3 norm = normalize(NormalCam);
@@ -39,8 +42,14 @@ void main()
     float frontDiff = max(dot(norm, -frontDir), 0.0);
     vec3 frontDiffuse = frontDiff * spotLightColor * frontIntensity;
 
-    vec3 frontReflect = reflect(frontDir, norm);
-    float frontSpec = pow(max(dot(viewDir, frontReflect), 0.0), 32.0);
+    float frontSpec;
+    if (useBlinn) {
+        vec3 halfwayDir = normalize((-frontDir) + viewDir);
+        frontSpec = pow(max(dot(norm, halfwayDir), 0.0), 32.0 * 4.0);
+    } else {
+        vec3 frontReflect = reflect(frontDir, norm);
+        frontSpec = pow(max(dot(viewDir, frontReflect), 0.0), 32.0);
+    }
     vec3 frontSpecular = frontSpec * spotLightColor * frontIntensity;
 
     // ===== TYLNY REFLEKTOR =====
@@ -52,8 +61,14 @@ void main()
     float backDiff = max(dot(norm, -backDir), 0.0);
     vec3 backDiffuse = backDiff * backLightColor * backIntensity;
 
-    vec3 backReflect = reflect(backDir, norm);
-    float backSpec = pow(max(dot(viewDir, backReflect), 0.0), 32.0);
+    float backSpec;
+    if (useBlinn) {
+        vec3 halfwayDir = normalize((-backDir) + viewDir);
+        backSpec = pow(max(dot(norm, halfwayDir), 0.0), 32.0 * 4.0);
+    } else {
+        vec3 backReflect = reflect(backDir, norm);
+        backSpec = pow(max(dot(viewDir, backReflect), 0.0), 32.0);
+    }
     vec3 backSpecular = backSpec * backLightColor * backIntensity;
 
     // ===== ŚWIATŁO Z GÓRY =====
@@ -61,6 +76,7 @@ void main()
     float topDiff = max(dot(norm, topDir), 0.0);
     vec3 topDiffuse = topDiff * topLightColor;
 
+    // ===== SUMA =====
     result += (frontDiffuse + frontSpecular +
                backDiffuse + backSpecular +
                topDiffuse) * objectColor;

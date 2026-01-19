@@ -164,6 +164,8 @@ int main()
 {
     float spotYawOffset = 0.0f;
     float spotPitchOffset = 0.0f;
+    bool useBlinn = false;
+    bool blinnPressedLastFrame = false;
     // -------- GLFW --------
     if (!glfwInit())
     {
@@ -475,6 +477,14 @@ mirrorSurface.setPosition(mirrorPos);
 
         fogDensity = glm::clamp(fogDensity, 0.0f, 2.0f);
 
+        // ===== Przełączanie Phong / Blinn =====
+        if (keys[GLFW_KEY_P] && !blinnPressedLastFrame) {
+            useBlinn = !useBlinn;
+            blinnPressedLastFrame = true;
+        }
+        if (!keys[GLFW_KEY_P]) {
+            blinnPressedLastFrame = false;
+        }
 
         // ===================== ŚWIATŁO =====================
         glm::vec3 lightPos(0.0f, 0.0f, 0.0f); // słońce
@@ -494,6 +504,7 @@ mirrorSurface.setPosition(mirrorPos);
         // ===== PLANETY + SŁOŃCE (lightingShader) =====
         lightingShader.use();
 
+        lightingShader.setBool("useBlinn", useBlinn);
         lightingShader.setVec3("lightPos", lightPosCam);
 
         if (!isNight)
@@ -555,12 +566,17 @@ mirrorSurface.setPosition(mirrorPos);
 
         // ===== STATEK (spotlightShader) ====
         spotlightShader.use();
+        spotlightShader.setBool("useBlinn", useBlinn);
+        //spotlightShader.setBool("useBlinn", useBlinn);
         spotlightShader.setMat4("view", view);
         spotlightShader.setMat4("projection", projection);
         spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
         spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
         spotlightShader.setVec3("topLightPos", topLightPosCam);
         spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
+        //TODO USUN TE DWIE
+        spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
+        spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
 
         // --- reflektor przód ---
         spotlightShader.setVec3("spotLightPos", spotLightPosCam);
@@ -634,6 +650,7 @@ glCullFace(GL_FRONT); // Odwracamy culling dla odbić
 
 // Rysuj obiekty w odbiciu
 lightingShader.use();
+lightingShader.setBool("useBlinn", useBlinn);
 
 glm::vec3 lightPosRefl      = glm::vec3(reflectedView * glm::vec4(lightPos, 1.0));
 glm::vec3 spotLightPosRefl  = glm::vec3(reflectedView * glm::vec4(backPos, 1.0));
@@ -646,7 +663,7 @@ lightingShader.setVec3("spotLightPos", spotLightPosRefl);
 lightingShader.setVec3("spotLightDir", spotLightDirRefl);
 lightingShader.setVec3("backLightPos", backLightPosRefl);
 lightingShader.setVec3("backLightDir", backLightDirRefl);
-// Pamiętaj o przesłaniu macierzy do shaderów!
+
 lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.6f, 1.0f));
 lightingShader.setFloat("shininess", 32.0f);
 planet1.draw(reflectedView, projection);
@@ -670,6 +687,41 @@ else
 
 lightingShader.setFloat("shininess", 64.0f);
 sun.draw(reflectedView, projection);
+// --- Rysowanie statku w odbiciu ---
+spotlightShader.use();
+spotlightShader.setBool("useBlinn", useBlinn);
+spotlightShader.setMat4("view", reflectedView); 
+spotlightShader.setMat4("projection", projection);
+
+glm::vec3 reflectedViewPos = viewPos;
+reflectedViewPos.z = mirrorPos.z - (viewPos.z - mirrorPos.z);
+spotlightShader.setVec3("viewPos", reflectedViewPos);
+spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
+spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
+// --- TO DOPISZ: Brakujące parametry oświetlenia dla statku ---
+glm::vec3 topLightPosRefl = glm::vec3(reflectedView * glm::vec4(glm::vec3(0, 8, 0), 1.0));
+spotlightShader.setVec3("topLightPos", topLightPosRefl);
+spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
+spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
+spotlightShader.setFloat("fogDensity", fogDensity);
+spotlightShader.setVec3("fogColor", fogColor);
+// -----------------------------------------------------------
+
+// Ponownie przeliczamy światła specyficzne dla shadera statku
+spotlightShader.setVec3("spotLightPos", spotLightPosRefl);
+spotlightShader.setVec3("spotLightDir", spotLightDirRefl);
+spotlightShader.setVec3("backLightPos", backLightPosRefl);
+spotlightShader.setVec3("backLightDir", backLightDirRefl);
+
+// Ustawienie odcięć (cutOff) - jeśli shader ich nie pamięta
+spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
+spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
+spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
+spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
+
+spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
+
+spaceshipObj.draw(reflectedView, projection);
 
 
 

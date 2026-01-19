@@ -31,12 +31,13 @@ uniform vec3 topLightColor;
 uniform float fogDensity;
 uniform vec3 fogColor;
 
+// ================= PHONG / BLINN =================
+uniform bool useBlinn;
+
 void main()
 {
     vec3 norm = normalize(NormalCam);
-
-    // kamera w układzie kamery jest w (0,0,0)
-    vec3 viewDir = normalize(-FragPosCam);
+    vec3 viewDir = normalize(-FragPosCam); // kamera w (0,0,0)
 
     // ===== AMBIENT =====
     vec3 ambient = ambientLight;
@@ -46,8 +47,16 @@ void main()
     float diff = max(dot(norm, sunDir), 0.0);
     vec3 diffuse = diff * lightColor;
 
-    vec3 reflectDir = reflect(-sunDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    float spec;
+    if (useBlinn) {
+        // Blinn-Phong
+        vec3 halfwayDir = normalize(sunDir + viewDir);
+        spec = pow(max(dot(norm, halfwayDir), 0.0), shininess * 4.0);
+    } else {
+        // Klasyczny Phong
+        vec3 reflectDir = reflect(-sunDir, norm);
+        spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    }
     vec3 specular = spec * lightColor;
 
     // ===== REFLEKTOR PRZEDNI =====
@@ -58,7 +67,15 @@ void main()
 
     float spotDiff = max(dot(norm, -spotDir), 0.0);
     vec3 spotDiffuse = spotDiff * spotLightColor * intensity;
-    vec3 spotSpecular = pow(max(dot(viewDir, reflect(spotDir, norm)), 0.0), shininess) * spotLightColor * intensity;
+
+    float spotSpec;
+    if (useBlinn) {
+        vec3 halfwayDir = normalize((-spotDir) + viewDir);
+        spotSpec = pow(max(dot(norm, halfwayDir), 0.0), shininess * 4.0);
+    } else {
+        spotSpec = pow(max(dot(viewDir, reflect(spotDir, norm)), 0.0), shininess);
+    }
+    vec3 spotSpecular = spotSpec * spotLightColor * intensity;
 
     // ===== REFLEKTOR TYLNY =====
     vec3 backDir = normalize(FragPosCam - backLightPos);
@@ -68,7 +85,15 @@ void main()
 
     float backDiff = max(dot(norm, -backDir), 0.0);
     vec3 backDiffuse = backDiff * backLightColor * backIntensity;
-    vec3 backSpecular = pow(max(dot(viewDir, reflect(backDir, norm)), 0.0), shininess) * backLightColor * backIntensity;
+
+    float backSpec;
+    if (useBlinn) {
+        vec3 halfwayDir = normalize((-backDir) + viewDir);
+        backSpec = pow(max(dot(norm, halfwayDir), 0.0), shininess * 4.0);
+    } else {
+        backSpec = pow(max(dot(viewDir, reflect(backDir, norm)), 0.0), shininess);
+    }
+    vec3 backSpecular = backSpec * backLightColor * backIntensity;
 
     // ===== DODATKOWE ŚWIATŁO Z GÓRY =====
     vec3 topDir = normalize(topLightPos - FragPosCam);
@@ -111,3 +136,4 @@ void main()
 
     FragColor = vec4(finalColor, 1.0);
 }
+
