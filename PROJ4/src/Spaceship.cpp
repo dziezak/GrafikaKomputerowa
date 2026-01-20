@@ -13,16 +13,13 @@ void Spaceship::update(bool* keys, float deltaTime)
 {
     glm::vec3 rot = object->getRotation();
 
-    // --- obrót ---
     if (keys[GLFW_KEY_A]) rot.y += rotationSpeed * deltaTime;
     if (keys[GLFW_KEY_D]) rot.y -= rotationSpeed * deltaTime;
 
     object->setRotation(rot);
 
-    // --- kierunek ruchu ---
     glm::vec3 forward = getForward();
 
-    // --- ruch ---
     glm::vec3 pos = object->getPosition();
     if (keys[GLFW_KEY_W]) pos += forward * moveSpeed * deltaTime;
     if (keys[GLFW_KEY_S]) pos -= forward * moveSpeed * deltaTime;

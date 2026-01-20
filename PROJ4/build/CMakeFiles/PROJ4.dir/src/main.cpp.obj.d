@@ -344,7 +344,4 @@ CMakeFiles/PROJ4.dir/src/main.cpp.obj: \
  C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Object3D.h \
  C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Camera.h \
  C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Spaceship.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorCamera.h \
- C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\ReflectionBuffer.h \
  C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorSurface.h

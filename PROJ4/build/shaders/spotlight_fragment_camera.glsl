@@ -23,7 +23,7 @@ uniform vec3 topLightColor;
 
 uniform vec3 objectColor;
 
-// ⭐ PHONG / BLINN
+// PHONG / BLINN
 uniform bool useBlinn;
 
 void main()

@@ -1,3 +1,16 @@
-# info dla mnie jakbym zapomnial, ze wszytsko jest juz ogarniete tak aby wpisac tylko:
+DLA PROWADZĄCEGO:
+
+1. Aby skąpilować:
 mingw32-make clean
 mingw32-make
+
+( program pojawi się pod postacią .exe w folderze build)
+
+2. Klawiszologia:
+
+- WASD -> poruszanie statkiem 
+- strzałki -> pozwalają ruszać przednim reflektorem staku 
+- C -> zmiana między dostępnymi kamerami 
+- B -> zmiana trybu między noc/dzień 
+- N/M -> zmniejszanie i zwiększanie mgły 
+- P -> przełączenia się przez opcjami wyświetlaniea Blinn oraz Phong 

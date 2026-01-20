@@ -6,7 +6,6 @@
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)
 {
-    // 1. wczytanie kodu shaderów z plików
     std::string vertexCode;
     std::string fragmentCode;
     std::ifstream vShaderFile, fShaderFile;
@@ -29,8 +28,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
     std::cout << vertexCode << "\n\n";
 
 
-
-    // 2. kompilacja vertex shader
     unsigned int vertex, fragment;
     int success;
     char infoLog[512];
@@ -45,7 +42,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
         std::cout << "ERROR::VERTEX_SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
-    // 3. kompilacja fragment shader
     fragment = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragment, 1, &fShaderCode, nullptr);
     glCompileShader(fragment);
@@ -56,7 +52,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
         std::cout << "ERROR::FRAGMENT_SHADER_COMPILATION_FAILED\n" << infoLog << std::endl;
     }
 
-    // 4. linkowanie programu
     ID = glCreateProgram();
     glAttachShader(ID, vertex);
     glAttachShader(ID, fragment);
@@ -68,7 +63,6 @@ Shader::Shader(const char* vertexPath, const char* fragmentPath)
         std::cout << "ERROR::SHADER_PROGRAM_LINKING_FAILED\n" << infoLog << std::endl;
     }
 
-    // 5. usuwamy shadery po linkowaniu
     glDeleteShader(vertex);
     glDeleteShader(fragment);
 }
@@ -83,7 +77,6 @@ void Shader::setMat4(const std::string& name, const glm::mat4& mat) const
     glUniformMatrix4fv(glGetUniformLocation(ID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 }
 
-// -------------------- NOWE METODY --------------------
 void Shader::setVec3(const std::string& name, const glm::vec3& value) const
 {
     glUniform3fv(glGetUniformLocation(ID, name.c_str()), 1, &value[0]);

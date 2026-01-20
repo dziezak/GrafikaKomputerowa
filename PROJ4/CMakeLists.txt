@@ -9,9 +9,6 @@ add_executable(PROJ4
     src/glad.c
     src/Camera.cpp
     src/Spaceship.cpp
-    src/Mirror.cpp
-    src/MirrorCamera.cpp
-    src/ReflectionBuffer.cpp
     src/MirrorSurface.cpp
 )
 

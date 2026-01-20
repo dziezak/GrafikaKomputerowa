@@ -158,56 +158,11 @@ CMakeFiles/PROJ4.dir/src/Spaceship.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/PROJ4.dir/src/Spaceship.cpp.s"
 	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Spaceship.cpp -o CMakeFiles\PROJ4.dir\src\Spaceship.cpp.s
 
-CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj: CMakeFiles/PROJ4.dir/flags.make
-CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj: CMakeFiles/PROJ4.dir/includes_CXX.rsp
-CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj: C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/Mirror.cpp
-CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj: CMakeFiles/PROJ4.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj -MF CMakeFiles\PROJ4.dir\src\Mirror.cpp.obj.d -o CMakeFiles\PROJ4.dir\src\Mirror.cpp.obj -c C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.cpp
-
-CMakeFiles/PROJ4.dir/src/Mirror.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/PROJ4.dir/src/Mirror.cpp.i"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.cpp > CMakeFiles\PROJ4.dir\src\Mirror.cpp.i
-
-CMakeFiles/PROJ4.dir/src/Mirror.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/PROJ4.dir/src/Mirror.cpp.s"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\Mirror.cpp -o CMakeFiles\PROJ4.dir\src\Mirror.cpp.s
-
-CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj: CMakeFiles/PROJ4.dir/flags.make
-CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj: CMakeFiles/PROJ4.dir/includes_CXX.rsp
-CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj: C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/MirrorCamera.cpp
-CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj: CMakeFiles/PROJ4.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj -MF CMakeFiles\PROJ4.dir\src\MirrorCamera.cpp.obj.d -o CMakeFiles\PROJ4.dir\src\MirrorCamera.cpp.obj -c C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorCamera.cpp
-
-CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.i"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorCamera.cpp > CMakeFiles\PROJ4.dir\src\MirrorCamera.cpp.i
-
-CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.s"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorCamera.cpp -o CMakeFiles\PROJ4.dir\src\MirrorCamera.cpp.s
-
-CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj: CMakeFiles/PROJ4.dir/flags.make
-CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj: CMakeFiles/PROJ4.dir/includes_CXX.rsp
-CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj: C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/ReflectionBuffer.cpp
-CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj: CMakeFiles/PROJ4.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj -MF CMakeFiles\PROJ4.dir\src\ReflectionBuffer.cpp.obj.d -o CMakeFiles\PROJ4.dir\src\ReflectionBuffer.cpp.obj -c C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\ReflectionBuffer.cpp
-
-CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.i"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\ReflectionBuffer.cpp > CMakeFiles\PROJ4.dir\src\ReflectionBuffer.cpp.i
-
-CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.s"
-	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\ReflectionBuffer.cpp -o CMakeFiles\PROJ4.dir\src\ReflectionBuffer.cpp.s
-
 CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj: CMakeFiles/PROJ4.dir/flags.make
 CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj: CMakeFiles/PROJ4.dir/includes_CXX.rsp
 CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj: C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/PROJ4/src/MirrorSurface.cpp
 CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj: CMakeFiles/PROJ4.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj"
 	C:\Strawberry\c\bin\c++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj -MF CMakeFiles\PROJ4.dir\src\MirrorSurface.cpp.obj.d -o CMakeFiles\PROJ4.dir\src\MirrorSurface.cpp.obj -c C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\src\MirrorSurface.cpp
 
 CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.i: cmake_force
@@ -226,9 +181,6 @@ PROJ4_OBJECTS = \
 "CMakeFiles/PROJ4.dir/src/glad.c.obj" \
 "CMakeFiles/PROJ4.dir/src/Camera.cpp.obj" \
 "CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj" \
-"CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj" \
-"CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj" \
-"CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj" \
 "CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj"
 
 # External object files for target PROJ4
@@ -240,9 +192,6 @@ PROJ4.exe: CMakeFiles/PROJ4.dir/src/Object3D.cpp.obj
 PROJ4.exe: CMakeFiles/PROJ4.dir/src/glad.c.obj
 PROJ4.exe: CMakeFiles/PROJ4.dir/src/Camera.cpp.obj
 PROJ4.exe: CMakeFiles/PROJ4.dir/src/Spaceship.cpp.obj
-PROJ4.exe: CMakeFiles/PROJ4.dir/src/Mirror.cpp.obj
-PROJ4.exe: CMakeFiles/PROJ4.dir/src/MirrorCamera.cpp.obj
-PROJ4.exe: CMakeFiles/PROJ4.dir/src/ReflectionBuffer.cpp.obj
 PROJ4.exe: CMakeFiles/PROJ4.dir/src/MirrorSurface.cpp.obj
 PROJ4.exe: CMakeFiles/PROJ4.dir/build.make
 PROJ4.exe: C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64-mingw-dynamic/lib/libglfw3dll.a
@@ -250,7 +199,7 @@ PROJ4.exe: C:/dev/GitHub/CPP/Politechnika/GrafikaKomputerowa/vcpkg/installed/x64
 PROJ4.exe: CMakeFiles/PROJ4.dir/linkLibs.rsp
 PROJ4.exe: CMakeFiles/PROJ4.dir/objects1.rsp
 PROJ4.exe: CMakeFiles/PROJ4.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking CXX executable PROJ4.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\dev\GitHub\CPP\Politechnika\GrafikaKomputerowa\PROJ4\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable PROJ4.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\PROJ4.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
