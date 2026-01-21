@@ -482,6 +482,111 @@ int main()
         glm::vec3 frontPos = shipPos + forward * 1.2f;
         glm::vec3 backPos  = shipPos - forward * 1.2f;
 
+        // 1) RYSOWANIE MASKI (LUSTRA) DO STENCILA
+        glEnable(GL_STENCIL_TEST);
+        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+        glStencilFunc(GL_ALWAYS, 1, 0xFF);
+        glStencilMask(0xFF);
+
+        glDepthMask(GL_TRUE); 
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        glClear(GL_STENCIL_BUFFER_BIT); 
+
+        mirrorSurface.draw(view, projection);
+
+        // 2) RYSOWANIE ODBICIA
+        glStencilFunc(GL_EQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        glClear(GL_DEPTH_BUFFER_BIT); 
+
+        glm::mat4 reflectedView = view;
+        reflectedView = glm::translate(reflectedView, mirrorPos);
+        reflectedView = glm::scale(reflectedView, glm::vec3(1, 1, -1));
+        reflectedView = glm::translate(reflectedView, -mirrorPos);
+
+        glCullFace(GL_FRONT);
+
+        lightingShader.use();
+        lightingShader.setBool("useBlinn", useBlinn);
+
+        glm::vec3 lightPosRefl      = glm::vec3(reflectedView * glm::vec4(lightPos, 1.0));
+        glm::vec3 spotLightPosRefl  = glm::vec3(reflectedView * glm::vec4(backPos, 1.0));
+        glm::vec3 backLightPosRefl  = glm::vec3(reflectedView * glm::vec4(frontPos, 1.0));
+        glm::vec3 spotLightDirRefl  = glm::normalize(glm::mat3(reflectedView) * (-spotDir));
+        glm::vec3 backLightDirRefl  = glm::normalize(glm::mat3(reflectedView) * forward);
+
+        lightingShader.setVec3("lightPos", lightPosRefl);
+        lightingShader.setVec3("spotLightPos", spotLightPosRefl);
+        lightingShader.setVec3("spotLightDir", spotLightDirRefl);
+        lightingShader.setVec3("backLightPos", backLightPosRefl);
+        lightingShader.setVec3("backLightDir", backLightDirRefl);
+
+        lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.6f, 1.0f));
+        lightingShader.setFloat("shininess", 32.0f);
+        planet1.draw(reflectedView, projection);
+
+        lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.4f, 0.4f));
+        lightingShader.setFloat("shininess", 16.0f);
+        planet2.draw(reflectedView, projection);
+
+        lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.8f, 0.5f));
+        lightingShader.setFloat("shininess", 8.0f);
+        planet3.draw(reflectedView, projection);
+
+        lightingShader.setVec3("objectColor", glm::vec3(0.6f, 0.4f, 0.9f));
+        lightingShader.setFloat("shininess", 4.0f);
+        planet4.draw(reflectedView, projection);
+
+        if (!isNight)
+            lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
+        else
+            lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.85f));
+
+        lightingShader.setFloat("shininess", 64.0f);
+        sun.draw(reflectedView, projection);
+
+        spotlightShader.use();
+        spotlightShader.setMat4("view", reflectedView); 
+        spotlightShader.setMat4("projection", projection);
+
+        glm::vec3 reflectedViewPos = viewPos;
+        reflectedViewPos.z = mirrorPos.z - (viewPos.z - mirrorPos.z);
+        spotlightShader.setVec3("viewPos", reflectedViewPos);
+        spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
+        spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
+        glm::vec3 topLightPosRefl = glm::vec3(reflectedView * glm::vec4(glm::vec3(0, 8, 0), 1.0));
+        spotlightShader.setVec3("topLightPos", topLightPosRefl);
+        spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
+        spotlightShader.setFloat("fogDensity", fogDensity);
+        spotlightShader.setVec3("fogColor", fogColor);
+
+        spotlightShader.setVec3("spotLightPos", spotLightPosRefl);
+        spotlightShader.setVec3("spotLightDir", spotLightDirRefl);
+        spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
+        spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
+        spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
+
+        spotlightShader.setVec3("backLightPos", backLightPosRefl);
+        spotlightShader.setVec3("backLightDir", backLightDirRefl);
+        spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
+        spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
+        spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
+
+        glDisable(GL_CULL_FACE); 
+        spaceshipObj.draw(reflectedView, projection);
+        glEnable(GL_CULL_FACE);
+
+        glCullFace(GL_BACK);
+        glDisable(GL_STENCIL_TEST);
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        mirrorSurface.draw(view, projection);
+        glDisable(GL_BLEND);
+
+
         // ===== TRANSFORMACJA ŚWIATEŁ DO CAMERA SPACE =====
         glm::vec3 lightPosCam     = glm::vec3(view * glm::vec4(lightPos, 1.0));
         glm::vec3 spotLightPosCam = glm::vec3(view * glm::vec4(backPos, 1.0));
@@ -599,112 +704,7 @@ int main()
         glDepthMask(GL_TRUE);
 
 
-        // 1) RYSOWANIE MASKI (LUSTRA) DO STENCILA
-        glEnable(GL_STENCIL_TEST);
-        glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-        glStencilFunc(GL_ALWAYS, 1, 0xFF);
-        glStencilMask(0xFF);
 
-        glDepthMask(GL_TRUE); 
-        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        glClear(GL_STENCIL_BUFFER_BIT); 
-
-        mirrorSurface.draw(view, projection);
-
-        // 2) RYSOWANIE ODBICIA
-        glStencilFunc(GL_EQUAL, 1, 0xFF);
-        glStencilMask(0x00);
-        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-        glClear(GL_DEPTH_BUFFER_BIT); 
-
-        glm::mat4 reflectedView = view;
-        reflectedView = glm::translate(reflectedView, mirrorPos);
-        reflectedView = glm::scale(reflectedView, glm::vec3(1, 1, -1));
-        reflectedView = glm::translate(reflectedView, -mirrorPos);
-
-        glCullFace(GL_FRONT);
-
-        lightingShader.use();
-        lightingShader.setBool("useBlinn", useBlinn);
-
-        glm::vec3 lightPosRefl      = glm::vec3(reflectedView * glm::vec4(lightPos, 1.0));
-        glm::vec3 spotLightPosRefl  = glm::vec3(reflectedView * glm::vec4(backPos, 1.0));
-        glm::vec3 backLightPosRefl  = glm::vec3(reflectedView * glm::vec4(frontPos, 1.0));
-        glm::vec3 spotLightDirRefl  = glm::normalize(glm::mat3(reflectedView) * (-spotDir));
-        glm::vec3 backLightDirRefl  = glm::normalize(glm::mat3(reflectedView) * forward);
-
-        lightingShader.setVec3("lightPos", lightPosRefl);
-        lightingShader.setVec3("spotLightPos", spotLightPosRefl);
-        lightingShader.setVec3("spotLightDir", spotLightDirRefl);
-        lightingShader.setVec3("backLightPos", backLightPosRefl);
-        lightingShader.setVec3("backLightDir", backLightDirRefl);
-
-        lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.6f, 1.0f));
-        lightingShader.setFloat("shininess", 32.0f);
-        planet1.draw(reflectedView, projection);
-
-        lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.4f, 0.4f));
-        lightingShader.setFloat("shininess", 16.0f);
-        planet2.draw(reflectedView, projection);
-
-        lightingShader.setVec3("objectColor", glm::vec3(0.4f, 0.8f, 0.5f));
-        lightingShader.setFloat("shininess", 8.0f);
-        planet3.draw(reflectedView, projection);
-
-        lightingShader.setVec3("objectColor", glm::vec3(0.6f, 0.4f, 0.9f));
-        lightingShader.setFloat("shininess", 4.0f);
-        planet4.draw(reflectedView, projection);
-
-        if (!isNight)
-            lightingShader.setVec3("objectColor", glm::vec3(1.0f, 0.9f, 0.6f));
-        else
-            lightingShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.85f));
-
-        lightingShader.setFloat("shininess", 64.0f);
-        sun.draw(reflectedView, projection);
-
-        spotlightShader.use();
-        spotlightShader.setMat4("view", reflectedView); 
-        spotlightShader.setMat4("projection", projection);
-
-        glm::vec3 reflectedViewPos = viewPos;
-        reflectedViewPos.z = mirrorPos.z - (viewPos.z - mirrorPos.z);
-        spotlightShader.setVec3("viewPos", reflectedViewPos);
-        spotlightShader.setVec3("objectColor", glm::vec3(0.8f, 0.8f, 0.9f));
-        spotlightShader.setVec3("ambientLight", glm::vec3(0.15f, 0.15f, 0.2f));
-        glm::vec3 topLightPosRefl = glm::vec3(reflectedView * glm::vec4(glm::vec3(0, 8, 0), 1.0));
-        spotlightShader.setVec3("topLightPos", topLightPosRefl);
-        spotlightShader.setVec3("topLightColor", glm::vec3(0.4f, 0.4f, 0.5f));
-        spotlightShader.setFloat("fogDensity", fogDensity);
-        spotlightShader.setVec3("fogColor", fogColor);
-
-        spotlightShader.setVec3("spotLightPos", spotLightPosRefl);
-        spotlightShader.setVec3("spotLightDir", spotLightDirRefl);
-        spotlightShader.setVec3("spotLightColor", glm::vec3(1.0f, 1.0f, 0.9f));
-        spotlightShader.setFloat("cutOff", glm::cos(glm::radians(8.0f)));
-        spotlightShader.setFloat("outerCutOff", glm::cos(glm::radians(12.0f)));
-
-        spotlightShader.setVec3("backLightPos", backLightPosRefl);
-        spotlightShader.setVec3("backLightDir", backLightDirRefl);
-        spotlightShader.setVec3("backLightColor", glm::vec3(1.0f, 0.0f, 0.0f));
-        spotlightShader.setFloat("backCutOff", glm::cos(glm::radians(15.0f)));
-        spotlightShader.setFloat("backOuterCutOff", glm::cos(glm::radians(25.0f)));
-
-        glDisable(GL_CULL_FACE); 
-        spaceshipObj.draw(reflectedView, projection);
-        glEnable(GL_CULL_FACE);
-
-        glCullFace(GL_BACK);
-        glDisable(GL_STENCIL_TEST);
-
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        mirrorSurface.draw(view, projection);
-        glDisable(GL_BLEND);
-
-
-        
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
