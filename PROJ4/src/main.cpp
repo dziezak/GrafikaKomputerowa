@@ -369,7 +369,7 @@ int main()
 
         // Aktualizacja pozycji lustra (wewnątrz pętli)
         mirrorAngle += mirrorOrbitSpeed * deltaTime;
-        mirrorPos = glm::vec3(sinf(currentFrame * 0.5f) * 5.0f, 2.0f, -8.0f); 
+        mirrorPos = glm::vec3(sinf(currentFrame * 0.5f) * 5.0f, 2.0f, -15.0f); 
         mirrorSurface.setPosition(mirrorPos);
 
         // -------- WYBÓR KAMERY --------
@@ -476,12 +476,14 @@ int main()
             blinnPressedLastFrame = false;
         }
 
-        // ===================== ŚWIATŁO =====================
+        // ===================== ŚWIATŁO DANE ===================
         glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
         glm::vec3 shipPos = spaceship.getPosition();
         glm::vec3 frontPos = shipPos + forward * 1.2f;
         glm::vec3 backPos  = shipPos - forward * 1.2f;
 
+
+        // ===================== LUSTRO ===================
         // 1) RYSOWANIE MASKI (LUSTRA) DO STENCILA
         glEnable(GL_STENCIL_TEST);
         glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -583,10 +585,12 @@ int main()
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_DEPTH_TEST);//TODO: Ok?
         mirrorSurface.draw(view, projection);
         glDisable(GL_BLEND);
 
 
+        // ==================== Świat rzeczywisty ===================
         // ===== TRANSFORMACJA ŚWIATEŁ DO CAMERA SPACE =====
         glm::vec3 lightPosCam     = glm::vec3(view * glm::vec4(lightPos, 1.0));
         glm::vec3 spotLightPosCam = glm::vec3(view * glm::vec4(backPos, 1.0));
